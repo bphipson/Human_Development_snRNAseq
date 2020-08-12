@@ -1,0 +1,870 @@
+---
+title: "Quality control of the cells"
+author: "Belinda Phipson"
+date: "6/3/2019"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+The first step of the analysis is to perform quality control of the cells to make sure that low quality cells are removed prior to further analysis.
+
+# Load libraries and functions
+
+```{r,echo=FALSE}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+```
+
+```{r}
+source("/group/bioi1/belinda/SingleCell/Normalisation/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+# Read in data
+
+I have stored the sample-level information in a targets file under the data directory. The cellranger output files are read in using the Seurat function `Read10X`.
+
+```{r readTargets}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+
+```{r readData}
+f1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_1"])
+f2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_2"])
+f3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_3"])
+
+y1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Young_1"])
+y2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Young_2"])
+y3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Young_3"])
+
+a1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_1"])
+a2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_2"])
+a3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_3"])
+
+d1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Diseased_1"])
+d2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Diseased_2"])
+d3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Diseased_3"])
+d4 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Diseased_4"])
+```
+
+# Basic QC
+
+I will QC each sample individually. I examined the distribution of library sizes per cell, as well as the proportions of zeroes in each cell and the number of genes detected per cell. I also looked at the ribosomal and mitochondrial content per cell. The ribosomal and mitochondrial content is very low compared to single cell protocols and mostly the number of genes detected is at least 500 per cell. Considering that cellranger has already performed cell filtering using their default setting, I'm keeping all cells for now and will proceed with clustering.
+
+## Get gene annotation
+
+I'm using the org.Hs.eg.db annotation package to extract gene symbols, entrez ID, ensembl ID and the genename. This is useful for identifying ribosomal and mitochondrial related genes for QC purposes, as well as for downstream analysis.
+
+```{r}
+columns(org.Hs.eg.db)
+ann <- select(org.Hs.eg.db,keys=rownames(f1),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(f1),ann$SYMBOL)
+ann <- ann[m,]
+table(ann$SYMBOL==rownames(f1))
+```
+
+```{r}
+mito <- grep("mitochondrial",ann$GENENAME)
+length(mito)
+ribo <- grep("ribosomal",ann$GENENAME)
+length(ribo)
+```
+
+
+
+## Fetal 1
+
+```{r, fig.height=4,fig.width=7}
+# Fetal 1
+par(mfrow=c(1,2))
+libsize <- colSums(f1)
+pz <- colMeans(f1==0)
+numgene <- colSums(f1!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Fetal 1")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Fetal 1")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+```
+
+```{r, fig.height=4,fig.width=7}
+par(mfrow=c(1,2))
+propmito <- colSums(f1[mito,])/libsize
+propribo <- colSums(f1[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Fetal 1: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Fetal 1: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Fetal 2
+
+```{r, fig.height=4,fig.width=7}
+# Fetal 2
+par(mfrow=c(1,2))
+libsize <- colSums(f2)
+pz <- colMeans(f2==0)
+numgene <- colSums(f2!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Fetal 2")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Fetal 2")
+```
+
+```{r,, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(f2[mito,])/libsize
+propribo <- colSums(f2[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Fetal 2: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Fetal 2: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Fetal 3
+
+```{r, fig.height=4,fig.width=7}
+# Fetal 3
+par(mfrow=c(1,2))
+libsize <- colSums(f3)
+pz <- colMeans(f3==0)
+numgene <- colSums(f3!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Fetal 3")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Fetal 3")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r,fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(f3[mito,])/libsize
+propribo <- colSums(f3[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Fetal 3: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Fetal 3: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Young 1
+
+```{r, fig.height=4,fig.width=7}
+# Young 1
+par(mfrow=c(1,2))
+libsize <- colSums(y1)
+pz <- colMeans(y1==0)
+numgene <- colSums(y1!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Young 1")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Young 1")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(y1[mito,])/libsize
+propribo <- colSums(y1[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Young 1: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Young 1: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Young 2
+
+```{r, fig.height=4,fig.width=7}
+# Young 2
+par(mfrow=c(1,2))
+libsize <- colSums(y2)
+pz <- colMeans(y2==0)
+numgene <- colSums(y2!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Young 2")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Young 2")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(y2[mito,])/libsize
+propribo <- colSums(y2[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Young 2: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Young 2: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Young 3
+
+```{r, fig.height=4,fig.width=7}
+# Young 3
+par(mfrow=c(1,2))
+libsize <- colSums(y3)
+pz <- colMeans(y3==0)
+numgene <- colSums(y3!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Young 3")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Young 3")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(y3[mito,])/libsize
+propribo <- colSums(y3[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Young 3: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Young 3: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Adult 1
+
+```{r, fig.height=4,fig.width=7}
+# Adult 1
+par(mfrow=c(1,2))
+libsize <- colSums(a1)
+pz <- colMeans(a1==0)
+numgene <- colSums(a1!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Adult 1")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Adult 1")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(a1[mito,])/libsize
+propribo <- colSums(a1[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Adult 1: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Adult 1: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Adult 2
+
+```{r, fig.height=4,fig.width=7}
+# Adult 2
+par(mfrow=c(1,2))
+libsize <- colSums(a2)
+pz <- colMeans(a2==0)
+numgene <- colSums(a2!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Adult 2")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Adult 2")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(a2[mito,])/libsize
+propribo <- colSums(a2[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Adult 2: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Adult 2: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Adult 3
+
+```{r, fig.height=4,fig.width=7}
+# Adult 3
+par(mfrow=c(1,2))
+libsize <- colSums(a3)
+pz <- colMeans(a3==0)
+numgene <- colSums(a3!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Adult 3")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Adult 3")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(a3[mito,])/libsize
+propribo <- colSums(a3[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Adult 3: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Adult 3: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Disease 1
+
+```{r, fig.height=4,fig.width=7}
+# Disease 1
+par(mfrow=c(1,2))
+libsize <- colSums(d1)
+pz <- colMeans(d1==0)
+numgene <- colSums(d1!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Disease 1")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Disease 1")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(d1[mito,])/libsize
+propribo <- colSums(d1[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Disease 1: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Disease 1: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Disease 2
+
+```{r, fig.height=4,fig.width=7}
+# Disease 2
+par(mfrow=c(1,2))
+libsize <- colSums(d2)
+pz <- colMeans(d2==0)
+numgene <- colSums(d2!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Disease 2")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Disease 2")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(d2[mito,])/libsize
+propribo <- colSums(d2[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Disease 2: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Disease 2: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Disease 3
+
+```{r, fig.height=4,fig.width=7}
+# Disease 3
+par(mfrow=c(1,2))
+libsize <- colSums(d3)
+pz <- colMeans(d3==0)
+numgene <- colSums(d3!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Disease 3")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Disease 3")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(d3[mito,])/libsize
+propribo <- colSums(d3[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Disease 3: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Disease 3: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+## Disease 4
+
+```{r, fig.height=4,fig.width=7}
+# Disease 4
+par(mfrow=c(1,2))
+libsize <- colSums(d4)
+pz <- colMeans(d4==0)
+numgene <- colSums(d4!=0)
+
+find_modes(libsize)
+find_modes(numgene)
+find_modes(pz)
+
+smoothScatter(libsize,pz,xlab="Library size",ylab="Proportion zeroes per cell",main="Disease 4")
+smoothScatter(libsize,numgene,xlab="Library size",ylab="Detected genes",main="Disease 4")
+```
+
+```{r, fig.height=4,fig.width=10}
+par(mfrow=c(1,3))
+plot(density(libsize),main="Distribution of library sizes")
+#abline(v=3000,col=2)
+plot(density(pz), main="Distribution of proportion of zeroes per cell")
+#abline(v=0.95,col=2)
+plot(density(numgene), main="Distribution of detected genes per cell")
+abline(v=500,col=4, lty=3)
+legend("topright",lty=2,col=4,legend="500 genes")
+```
+
+```{r, fig.height=4,fig.width=7}
+mycol <- rep(1,length(libsize))
+mycol[pz>0.95] <- 2
+
+par(mfrow=c(1,2))
+propmito <- colSums(d4[mito,])/libsize
+propribo <- colSums(d4[ribo,])/libsize
+plot(libsize,propribo,xlab="Library size",ylab="Proportion ribosomal counts",main="Disease 4: Ribosomal content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+plot(libsize,propmito,xlab="Library size",ylab="Proportion mitochondrial counts",main="Disease 4: Mitochondrial content",col=mycol)
+legend("topright",fill=c(1,2),legend=c("pz <= 0.95","pz > 0.95"))
+```
+
+# Comparing between samples
+
+Here I am looking at the library sizes, number of detected genes, first modes of both library size distributions and number of detected genes per cell, as well as numbers of cells for each sample. This will help highlight if any of the samples look vastly different to the others in the dataset.
+
+## Calculating statistics
+
+```{r}
+libmode <- rep(NA,13)
+numgmode <- rep(NA,13)
+numcells <- rep(NA,13)
+names(libmode) <- names(numgmode) <- names(numcells) <- c("Fetal_1","Fetal_2","Fetal_3",
+                                       "Young_1","Young_2","Young_3",
+                                       "Adult_1","Adult_2","Adult_3",
+                                       "Diseased_1","Diseased_2",
+                                       "Diseased_3","Diseased_4")
+
+mylibs <- mynumg <- vector("list", 13) 
+
+mylibs[[1]] <- colSums(f1)
+mynumg[[1]] <- colSums(f1!=0)
+numcells[1] <- ncol(f1)
+
+libmode[1] <- find_modes(mylibs[[1]])[1]
+numgmode[1] <- find_modes(mynumg[[1]])[1]
+
+mylibs[[2]] <- colSums(f2)
+mynumg[[2]] <- colSums(f2!=0)
+numcells[2] <- ncol(f2)
+
+libmode[2] <- find_modes(mylibs[[2]])[1]
+numgmode[2] <- find_modes(mynumg[[2]])[1]
+
+mylibs[[3]] <- colSums(f3)
+mynumg[[3]] <- colSums(f3!=0)
+libmode[3] <- find_modes(mylibs[[3]])[1]
+numgmode[3] <- find_modes(mynumg[[3]])[1]
+numcells[3] <- ncol(f3)
+
+mylibs[[4]] <- colSums(y1)
+mynumg[[4]] <- colSums(y1!=0)
+libmode[4] <- find_modes(mylibs[[4]])[1]
+numgmode[4] <- find_modes(mynumg[[4]])[1]
+numcells[4] <- ncol(y1)
+
+mylibs[[5]] <- colSums(y2)
+mynumg[[5]] <- colSums(y2!=0)
+libmode[5] <- find_modes(mylibs[[5]])[1]
+numgmode[5] <- find_modes(mynumg[[5]])[1]
+numcells[5] <- ncol(y2)
+
+mylibs[[6]] <- colSums(y3)
+mynumg[[6]] <- colSums(y3!=0)
+libmode[6] <- find_modes(mylibs[[6]])[1]
+numgmode[6] <- find_modes(mynumg[[6]])[1]
+numcells[6] <- ncol(y3)
+
+mylibs[[7]] <- colSums(a1)
+mynumg[[7]] <- colSums(a1!=0)
+libmode[7] <- find_modes(mylibs[[7]])[1]
+numgmode[7] <- find_modes(mynumg[[7]])[1]
+numcells[7] <- ncol(a1)
+
+mylibs[[8]] <- colSums(a2)
+mynumg[[8]] <- colSums(a2!=0)
+libmode[8] <- find_modes(mylibs[[8]])[1]
+numgmode[8] <- find_modes(mynumg[[8]])[1]
+numcells[8] <- ncol(a2)
+
+mylibs[[9]] <- colSums(a3)
+mynumg[[9]] <- colSums(a3!=0)
+libmode[9] <- find_modes(mylibs[[9]])[1]
+numgmode[9] <- find_modes(mynumg[[9]])[1]
+numcells[9] <- ncol(a3)
+
+mylibs[[10]] <- colSums(d1)
+mynumg[[10]] <- colSums(d1!=0)
+libmode[10] <- find_modes(mylibs[[10]])[1]
+numgmode[10] <- find_modes(mynumg[[10]])[1]
+numcells[10] <- ncol(d1)
+
+mylibs[[11]] <- colSums(d2)
+mynumg[[11]] <- colSums(d2!=0)
+libmode[11] <- find_modes(mylibs[[11]])[1]
+numgmode[11] <- find_modes(mynumg[[11]])[1]
+numcells[11] <- ncol(d2)
+
+mylibs[[12]] <- colSums(d3)
+mynumg[[12]] <- colSums(d3!=0)
+libmode[12] <- find_modes(mylibs[[12]])[1]
+numgmode[12] <- find_modes(mynumg[[12]])[1]
+numcells[12] <- ncol(d3)
+
+mylibs[[13]] <- colSums(d4)
+mynumg[[13]] <- colSums(d4!=0)
+libmode[13] <- find_modes(mylibs[[13]])[1]
+numgmode[13] <- find_modes(mynumg[[13]])[1]
+numcells[13] <- ncol(d4)
+```
+
+## Number of cells per sample
+
+```{r}
+par(mar=c(6,4,2,2))
+mycols <- rep(ggplotColors(4),c(3,3,3,4))
+barplot(numcells,col=mycols,las=2,main="Number of cells per sample")
+abline(h=1000,lty=2,lwd=2)
+```
+
+## Library size distributions (sequencing depth)
+```{r}
+plot(density(mylibs[[1]]),lwd=2,col=mycols[1],ylim=c(0,0.0003),main="Library size distributions")
+for(i in 2:13) lines(density(mylibs[[i]]),lwd=2,col=mycols[i])
+legend("topright",legend=c("Fetal","Young","Adult","Diseased"),fill=ggplotColors(4))
+#abline(v=1000,lty=2,lwd=2)
+```
+
+```{r}
+par(mfrow=c(1,1))
+par(mar=c(6,4,2,2))
+boxplot(mylibs,col=mycols,names=names(libmode),las=2, main="Library size distributions",ylim=c(0,150000))
+boxplot(mylibs,col=ggplotColors(2)[factor(targets$Batch)],names=names(libmode),las=2, main="Library size distributions by batch",ylim=c(0,150000))
+legend("topleft",fill=ggplotColors(2),legend=levels(factor(targets$Batch)))
+```
+
+## Number of genes detected
+
+```{r}
+plot(density(mynumg[[1]]),lwd=2,col=mycols[1],ylim=c(0,0.0007),main="Number of genes detected distributions")
+for(i in 2:13) lines(density(mynumg[[i]]),lwd=2,col=mycols[i])
+legend("topright",legend=c("Fetal","Young","Adult","Diseased"),fill=ggplotColors(4))
+```
+
+```{r}
+par(mfrow=c(1,1))
+par(mar=c(6,4,2,2))
+boxplot(mynumg,col=mycols,names=names(libmode),las=2, main="Number of genes detected")
+boxplot(mynumg,col=ggplotColors(2)[factor(targets$Batch)],names=names(libmode),las=2, main="Number of genes detected by batch")
+legend("topleft",fill=ggplotColors(2),legend=levels(factor(targets$Batch)))
+```
+
+## Examining the first modes from density ditributions
+
+```{r,fig.height=4, fig.width=7}
+barplot(libmode,col=mycols,las=2)
+title("First mode: library size distributions")
+abline(h=1000,lty=2,lwd=2)
+
+barplot(numgmode,col=mycols,las=2)
+title("First mode: number of genes detected distributions")
+abline(h=500,lty=2,lwd=2)
+```
+
+# Create pseudobulk samples
+
+## MDS plot of all samples
+
+To get a high-level idea of the overall sources of variability in the dataset, I have summed the counts over all cells within a sample to obtain a "pseudobulk" sample and made MDS plots using functions in edgeR.
+
+```{r}
+pseudobulk <- matrix(NA,ncol=13,nrow=nrow(f1))
+colnames(pseudobulk) <- group
+rownames(pseudobulk) <- rownames(f1)
+
+pseudobulk[,1] <- rowSums(f1)
+pseudobulk[,2] <- rowSums(f2)
+pseudobulk[,3] <- rowSums(f3)
+pseudobulk[,4] <- rowSums(y1)
+pseudobulk[,5] <- rowSums(y2)
+pseudobulk[,6] <- rowSums(y3)
+pseudobulk[,7] <- rowSums(a1)
+pseudobulk[,8] <- rowSums(a2)
+pseudobulk[,9] <- rowSums(a3)
+pseudobulk[,10] <- rowSums(d1)
+pseudobulk[,11] <- rowSums(d2)
+pseudobulk[,12] <- rowSums(d3)
+pseudobulk[,13] <- rowSums(d4)
+```
+
+```{r}
+y <- DGEList(pseudobulk)
+# Add annotation
+dim(ann)
+table(rownames(y) %in% ann$SYMBOL)
+m <- match(rownames(y),ann$SYMBOL)
+y$genes <- ann[m,]
+saveRDS(y,file="./data/pseudobulk.Rds")
+```
+
+```{r filter}
+keep <- rowSums(y$counts)>10
+#keep <- rowSums(cpm.DGEList(y)>=0.5)>=3
+table(keep)
+y.keep <- y[keep,]
+```
+
+
+```{r,fig.width=12,fig.height=5}
+#pdf(file="/group/bioi1/belinda/SingleCell/Cardiac/MDSplots.pdf",
+#    width = 12,height = 5)
+par(mfrow=c(1,2))
+par(mar=c(4,4,2,2))
+plotMDS(y.keep,col=ggplotColors(4)[factor(targets$Group)])
+legend("bottom",fill=ggplotColors(4),legend=levels(factor(targets$Group)),bty="n")
+
+plotMDS(y.keep,dim=c(3,4),col=ggplotColors(2)[factor(targets$Sex)])
+legend("bottomright",fill=ggplotColors(2),legend=levels(factor(targets$Sex)),bty="n")
+#dev.off()
+```
+
+```{r}
+par(mfrow=c(1,1))
+par(mar=c(5,5,2,2))
+plotMDS(y.keep,col=ggplotColors(4)[factor(targets$Group)],pch=c(8,16)[factor(targets$Sex)],cex=2,gene.selection = "common",cex.lab=1.5)
+legend("bottom",fill=ggplotColors(4),legend=levels(factor(targets$Group)),cex=1.2)
+legend("topleft",pch=c(8,16),legend=levels(factor(targets$Sex)),cex=1.2)
+```
+
+
+## Check XIST expression
+
+```{r,fig.width=12,fig.height=5}
+par(mfrow=c(1,3))
+par(mar=c(6,4,2,2))
+lognc <- cpm.DGEList(y.keep,log=TRUE)
+barplot(y.keep$counts["XIST",],las=2,col=ggplotColors(4)[factor(targets$Group)],
+        main="XIST expression",ylab="Raw Counts")
+barplot(lognc["XIST",],las=2,col=ggplotColors(4)[factor(targets$Group)],
+        main="XIST expression",ylab="Log-normalised-expression")
+barplot(lognc["XIST",],las=2,col=ggplotColors(2)[factor(targets$Sex)],
+        main="XIST expression",ylab="Log-normalised-expression")
+legend("topleft",legend=levels(factor(targets$Sex)),fill=ggplotColors(2))
+```
+
+

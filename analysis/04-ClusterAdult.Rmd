@@ -1,0 +1,672 @@
+---
+title: "Analysis of adult samples"
+author: "Belinda Phipson"
+date: "6/21/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+
+I will cluster all the adult samples from batch 1 and batch 2 using the integration technique from the Seurat package.
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+```
+
+```{r}
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+# Read in the adult data
+
+```{r}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r readData}
+a1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_1"])
+colnames(a1) <- paste(colnames(a1),"a1",sep="_")
+a2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_2"])
+colnames(a2) <- paste(colnames(a2),"a2",sep="_")
+a3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Adult_3"])
+colnames(a3) <- paste(colnames(a3),"a3",sep="_")
+
+# Combine 3 samples into one big data matrix
+alla <- cbind(a1,a2,a3)
+```
+
+# Gene filtering
+
+## Get gene annotation
+
+I'm using gene annotation information from the `org.Hs.eg.db` package.
+
+```{r,warning=FALSE}
+columns(org.Hs.eg.db)
+ann <- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(alla),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(alla),ann$SYMBOL)
+ann <- ann[m,]
+table(ann$SYMBOL==rownames(alla))
+```
+
+```{r}
+mito <- grep("mitochondrial",ann$GENENAME)
+length(mito)
+ribo <- grep("ribosomal",ann$GENENAME)
+length(ribo)
+missingEZID <- which(is.na(ann$ENTREZID))
+length(missingEZID)
+```
+
+## Remove mitochondrial and ribosomal genes and genes with no ENTREZID
+
+These genes are not informative for downstream analysis.
+
+```{r}
+chuck <- unique(c(mito,ribo,missingEZID))
+length(chuck)
+alla.keep <- alla[-chuck,]
+ann.keep <- ann[-chuck,]
+table(ann.keep$SYMBOL==rownames(alla.keep))
+```
+
+## Remove very lowly expressed genes
+
+Removing very lowly expressed genes helps to reduce the noise in the data. Here I am choosing to keep genes with at least 1 count in at least 20 cells. This means that a cluster made up of at least 20 cells can potentially be detected (minimum cluster size = 20 cells).
+
+```{r}
+numzero.genes <- rowSums(alla.keep==0)
+
+#avg.exp <- rowMeans(cpm.DGEList(y.kid,log=TRUE))
+
+#plot(avg.exp,numzero.genes,xlab="Average log-normalised-counts",ylab="Number zeroes per gene")
+
+table(numzero.genes > (ncol(alla.keep)-20))
+
+keep.genes <- numzero.genes < (ncol(alla.keep)-20)
+table(keep.genes)
+
+alla.keep <- alla.keep[keep.genes,]
+dim(alla.keep)
+
+ann.keep <- ann.keep[keep.genes,]
+```
+
+The total size of the adult dataset is `r ncol(alla.keep)` cells and `r nrow(alla.keep)` genes.
+
+# Remove sex chromosome genes
+
+I will remove the sex chromosome genes before clustering so that the sex doesn't play a role in determining the clusters.
+
+```{r}
+sexchr <- ann.keep$CHR %in% c("X","Y")
+
+alla.nosex <- alla.keep[!sexchr,]
+dim(alla.nosex)
+
+ann.nosex <- ann.keep[!sexchr,]
+```
+
+# Save data objects
+
+```{r}
+#save(ann,ann.keep,ann.nosex,alla,alla.keep,alla.nosex,file="./output/RDataObjects/adultObjs.Rdata")
+```
+
+# Create Seurat objects
+
+Here I am following the Seurat vignette on performing clustering using their integration method to deal with batch effects.
+
+```{r}
+biorep <- factor(rep(c("a1","a2","a3"),c(ncol(a1),ncol(a2),ncol(a3))))
+names(biorep) <- colnames(alla.keep)
+sex <- factor(rep(c("f","m","m"),c(ncol(a1),ncol(a2),ncol(a3))))
+names(sex) <- colnames(alla.keep)
+age <- rep(c(35,41,42),c(ncol(a1),ncol(a2),ncol(a3)))
+names(age) <- colnames(alla.keep)
+batch <- rep(c("B2","B2","B1"),c(ncol(a1),ncol(a2),ncol(a3)))
+names(batch) <- colnames(alla.keep)
+
+adult <- CreateSeuratObject(counts = alla.nosex, project = "adult")
+adult <- AddMetaData(object=adult, metadata = biorep, col.name="biorep")
+adult <- AddMetaData(object=adult, metadata = sex, col.name="sex")
+adult <- AddMetaData(object=adult, metadata = age, col.name="age")
+adult <- AddMetaData(object=adult, metadata = batch, col.name="batch")
+```
+
+```{r}
+adult.list <- SplitObject(adult, split.by = "biorep")
+```
+
+# Try new normalisation method: SCTransform
+
+This new method replaces the `NormalizeData`, `FindVariableFeatures` and `ScaleData` functions. It performs regularised negative binomial regression with the total sequencing depth per cell as the covariate (i.e. library size), as well as any other user supplied covariates. The Pearson residuals are then used in downstream analysis.
+
+
+```{r sctnorm,warning=FALSE}
+# This is a bit slow
+for (i in 1:length(adult.list)) {
+    adult.list[[i]] <- SCTransform(adult.list[[i]], verbose = FALSE)
+#    adult.list[[i]] <- GetResidual(adult.list[[i]])
+}
+```
+
+# Perform the usual normalisation
+
+```{r}
+#for (i in 1:length(adult.list)) {
+#    adult.list[[i]] <- NormalizeData(adult.list[[i]], verbose = FALSE)
+#    adult.list[[i]] <- FindVariableFeatures(adult.list[[i]], selection.method #= "vst", 
+#                                            nfeatures = 2000, verbose = FALSE)
+#}
+```
+
+
+# Perform integration
+
+There are two steps:
+
+* Find integration anchors
+* Perform integration which should batch-correct the data
+
+The default number of dimensions is 30.
+Should increase the number of integration anchors to 3000.
+
+```{r intanchors}
+adult.anchors <- FindIntegrationAnchors(object.list = adult.list, dims = 1:30, anchor.features = 3000)
+```
+
+```{r integrate}
+adult.integrated <- IntegrateData(anchorset = adult.anchors, dims = 1:30)
+```
+
+# Perform clustering
+
+```{r}
+DefaultAssay(object = adult.integrated) <- "integrated"
+```
+
+## Perform scaling and PCA
+
+```{r pca}
+adult.integrated <- ScaleData(adult.integrated, verbose = FALSE)
+adult.integrated <- RunPCA(adult.integrated, npcs = 50, verbose = FALSE)
+ElbowPlot(adult.integrated,ndims=50)
+```
+
+```{r,fig.height=10, fig.width=12}
+VizDimLoadings(adult.integrated, dims = 1:4, reduction = "pca")
+```
+
+```{r}
+DimPlot(adult.integrated, reduction = "pca",group.by="biorep")
+DimPlot(adult.integrated, reduction = "pca",group.by="sex")
+DimPlot(adult.integrated, reduction = "pca",group.by="batch")
+```
+
+```{r,fig.height=10, fig.width=12}
+DimHeatmap(adult.integrated, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(adult.integrated, dims = 16:30, cells = 500, balanced = TRUE)
+```
+
+## Perform nearest neighbours clustering
+
+```{r clust}
+adult.integrated <- FindNeighbors(adult.integrated, dims = 1:20)
+adult.integrated <- FindClusters(adult.integrated, resolution = 0.6)
+table(Idents(adult.integrated))
+```
+
+```{r}
+barplot(table(Idents(adult.integrated)),ylab="Number of cells",xlab="Clusters")
+title("Number of cells in each cluster")
+```
+
+
+## Visualisation with TSNE
+
+```{r tsne}
+set.seed(10)
+adult.integrated <- RunTSNE(adult.integrated, reduction = "pca", dims = 1:20)
+```
+
+```{r}
+pdf(file="./output/Figures/tsne-adultALL.pdf",width=10,height=8,onefile = FALSE)
+DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+dev.off()
+```
+
+```{r}
+DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+```
+
+```{r,fig.width=12,fig.height=5}
+DimPlot(adult.integrated, reduction = "tsne", split.by = "biorep",label=TRUE,label.size = 5)+NoLegend()
+```
+
+```{r,fig.width=10,fig.height=6}
+DimPlot(adult.integrated, reduction = "tsne", split.by = "sex",label=TRUE,label.size = 5)+NoLegend()
+```
+
+
+```{r}
+DimPlot(adult.integrated, reduction = "tsne", group.by = "biorep")
+```
+
+
+```{r}
+DimPlot(adult.integrated, reduction = "tsne", group.by = "sex")
+```
+
+```{r}
+DimPlot(adult.integrated, reduction = "tsne", group.by = "batch")
+```
+
+```{r}
+#FeaturePlot(adult.integrated, features = c("XIST"))
+```
+
+```{r, fig.width=12,fig.height=9}
+FeaturePlot(adult.integrated, features = c("TNNT2", "MYH6", "WT1", "PECAM1", "TBX3", "PDGFRA"), pt.size = 0.2,
+            ncol = 3)
+```
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(adult.integrated),adult@meta.data$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3),legend=TRUE)
+```
+
+
+# Visualisation with clustree
+
+```{r}
+clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
+```
+```{r clustree}
+for(i in 1:length(clusres)){
+  adult.integrated <- FindClusters(adult.integrated, 
+                                   resolution = clusres[i])
+}
+```
+
+```{r}
+pct.male <- function(x) {mean(x=="m")}
+pct.female <- function(x) {mean(x=="f")}
+biorep1 <- function(x) {mean(x=="a1")}
+biorep2 <- function(x) {mean(x=="a2")}
+biorep3 <- function(x) {mean(x=="a3")}
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep1",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep2",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep3",assay="RNA")
+```
+
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.female",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.male",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+#clustree(adult.integrated, prefix = "integrated_snn_res.",
+#         node_colour = "XIST", node_colour_aggr = "median",
+#         assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(adult.integrated, prefix = "integrated_snn_res.",
+         node_colour = "TNNT2", node_colour_aggr = "median",
+         assay="RNA")
+```
+
+# Save Seurat object
+
+
+```{r}
+DefaultAssay(adult.integrated) <- "RNA"
+Idents(adult.integrated) <- adult.integrated$integrated_snn_res.0.6
+```
+
+```{r}
+saveRDS(adult.integrated,file="./output/RDataObjects/adult-int.Rds")
+```
+
+
+
+```{r,fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:ncol(mycont)){
+  plotMD(treat,coef=i,status = dt[,i],hl.cex=0.5)
+  abline(h=0,col=colours()[c(226)])
+  lines(lowess(treat$Amean,treat$coefficients[,i]),lwd=1.5,col=4)
+}
+```
+
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(adult.integrated),adult@meta.data$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3),legend=TRUE)
+```
+
+```{r markers}
+#adultmarkers <- FindAllMarkers(adult.integrated, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+# Limma-trend for DE
+
+y.adult <- DGEList(alla.keep)
+
+logcounts <- normCounts(y.adult,log=TRUE,prior.count=0.5)
+
+#logcounts.n <- normalizeBetweenArrays(logcounts, method = "cyclicloess")
+
+maxclust <- length(levels(Idents(adult.integrated)))-1
+
+grp <- paste("c",Idents(adult.integrated),sep = "")
+grp <- factor(grp,levels = paste("c",0:maxclust,sep=""))
+
+design <- model.matrix(~0+grp)
+colnames(design) <- levels(grp)
+
+mycont <- matrix(NA,ncol=length(levels(grp)),nrow=length(levels(grp)))
+rownames(mycont)<-colnames(mycont)<-levels(grp)
+diag(mycont)<-1
+mycont[upper.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+mycont[lower.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+
+fit <- lmFit(logcounts,design)
+fit.cont <- contrasts.fit(fit,contrasts=mycont)
+fit.cont <- eBayes(fit.cont,trend=TRUE,robust=TRUE)
+
+fit.cont$genes <- ann.keep
+
+summary(decideTests(fit.cont))
+
+treat <- treat(fit.cont,lfc=0.5)
+
+dt <- decideTests(treat)
+summary(dt)
+
+```
+
+## Write out marker genes for each cluster
+
+```{r}
+#write.csv(adultmarkers,file="./output/AllAdult-clustermarkers.csv")
+
+contnames <- colnames(mycont)
+
+for(i in 1:length(contnames)){
+  topsig <- topTreat(treat,coef=i,n=Inf,p.value=0.05)
+  write.csv(topsig[topsig$logFC>0,],file=paste("./output/MarkerAnalysis/Adult/Up-Cluster-",contnames[i],".csv",sep=""))
+  write.csv(topGO(goana(de=topsig$ENTREZID[topsig$logFC>0],universe=treat$genes$ENTREZID,species="Hs"),number=50),
+            file=paste("./output/MarkerAnalysis/Adult/GO-Cluster-",contnames[i],".csv",sep=""))
+
+}
+
+```
+
+# Heatmap of pre-defined heart cell type markers
+
+```{r}
+hm <- read.delim("./data/heart-markers-long.txt",stringsAsFactors = FALSE)
+hgene <- toupper(hm$Gene)
+hgene <- unique(hgene)
+
+m <- match(hgene,rownames(logcounts))
+m <- m[!is.na(m)]
+
+sam <- factor(adult.integrated$biorep)
+newgrp <- paste(grp,sam,sep=".")
+newgrp <- factor(newgrp,levels=paste(rep(levels(grp),each=3),levels(sam),sep="."))
+o <-order(newgrp)
+
+annot <- data.frame(CellType=grp,Sample=sam,NewGroup=newgrp)
+
+mycelltypes <- hm$Celltype[match(rownames(logcounts)[m],toupper(hm$Gene))]
+mycelltypes <- factor(mycelltypes)
+
+
+myColors <- list(Clust=NA,Sample=NA,Celltypes=NA)
+myColors$Clust<-sample(ggplotColors(length(levels(grp))),length(levels(grp)))
+names(myColors$Clust)<-levels(grp)
+myColors$Sample <- brewer.pal(3, "Set1")
+names(myColors$Sample) <- levels(sam)
+myColors$Celltypes <- ggplotColors(length(levels(mycelltypes)))
+names(myColors$Celltypes) <- levels(mycelltypes) 
+
+mygenes <- rownames(logcounts)[m]
+mygenelab <- paste(mygenes,mycelltypes,sep="_")
+```
+
+```{r heatmapHMarkers}
+par(mfrow=c(1,1))
+pdf(file="./output/Figures/adult-heatmap-hmarkers.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(logcounts[m,o],Rowv=NA,Colv=NA,labRow=mygenelab,labCol=NA,
+         annCol=list(Clust=grp[o],Sample=sam[o]),
+#         annRow = list(Celltypes=mycelltypes),
+         annColors = myColors, 
+         fontsize=16,color="-RdYlBu")
+dev.off()
+```
+
+# Summarise expression across cells 
+```{r}
+sumexpr <- matrix(NA,nrow=nrow(logcounts),ncol=length(levels(newgrp)))
+rownames(sumexpr) <- rownames(logcounts)
+colnames(sumexpr) <- levels(newgrp)
+
+for(i in 1:nrow(sumexpr)){
+  sumexpr[i,] <- tapply(logcounts[i,],newgrp,median)
+}
+
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+clust <- rep(levels(grp),each=3)
+samps <- rep(levels(sam),length(levels(grp)))
+pdf(file="./output/Figures/adult-heatmap-hmarkers-summarised.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+ #        annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=14,color="-RdYlBu")
+dev.off()
+```
+
+```{r, fig.width=10,fig.height=12}
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+#         annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=12,color="-RdYlBu")
+```
+
+
+
+```{r sigheatmap, fig.width=12,fig.height=12}
+sig.genes <- gene.label <- vector("list", length(levels(grp)))
+for(i in 1:length(sig.genes)){
+  top <- topTreat(treat,coef=i,n=200)
+  sig.genes[[i]] <- rownames(top)[top$logFC>0][1:5]
+  gene.label[[i]] <- paste(rownames(top)[top$logFC>0][1:5],levels(grp)[i],sep="-")
+} 
+
+csig <- unlist(sig.genes)
+genes <- unlist(gene.label)
+
+pdf(file="./output/Figures/adult-heatmap-siggenes-summarised.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+dev.off()
+```
+
+
+```{r heatmap-sig-genes, fig.width=10,fig.height=12}
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+```
+
+# Try annotate clusters based on fetal cell types
+
+```{r}
+# This loads a list object called sig.genes.gst
+load(file="./data/gstlist-fetal.Rdata")
+
+expr.score <- matrix(NA,nrow=length(sig.genes.gst),ncol=length(levels(newgrp)))
+colnames(expr.score) <- levels(newgrp)
+rownames(expr.score) <- names(sig.genes.gst)
+
+specialm <- lapply(sig.genes.gst,function(x) match(x,rownames(sumexpr))[!is.na(match(x,rownames(sumexpr)))])
+
+for(i in 1:nrow(expr.score)){
+  expr.score[i,] <- colMedians(sumexpr[specialm[[i]],])  
+}
+
+pdf(file="./output/Figures/heatmap-match-fetal-adult-medians.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(expr.score,
+         Rowv = NA,Colv = NA, 
+         labRow = rownames(expr.score),
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+dev.off()
+```
+
+```{r heatmap-match-fetal, fig.width=10,fig.height=12}
+aheatmap(expr.score,
+         Rowv = NA,Colv = NA, 
+         labRow = rownames(expr.score),
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=12,color="-RdYlBu",
+         scale="none")
+```
+
+# Compare adult to young
+
+```{r}
+# This loads a list object called young.sig.genes.gst
+load(file="./data/gstlist-young.Rdata")
+
+expr.score <- matrix(NA,nrow=length(young.sig.genes.gst),ncol=length(levels(newgrp)))
+colnames(expr.score) <- levels(newgrp)
+rownames(expr.score) <- names(young.sig.genes.gst)
+
+specialm <- lapply(young.sig.genes.gst,function(x) match(x,rownames(sumexpr))[!is.na(match(x,rownames(sumexpr)))])
+
+for(i in 1:nrow(expr.score)){
+  expr.score[i,] <- colMedians(sumexpr[specialm[[i]],])  
+}
+
+pdf(file="./output/Figures/heatmap-match-young-adult-medians.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(expr.score,
+         Rowv = NA,Colv = NA, 
+         labRow = rownames(expr.score),
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+dev.off()
+```
+
+```{r heatmap-match-young, fig.width=10,fig.height=12}
+aheatmap(expr.score,
+         Rowv = NA,Colv = NA, 
+         labRow = rownames(expr.score),
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+```
+
+# Create list of marker genes for GST purposes
+
+```{r}
+adult.sig.genes.gst <- vector("list", length(levels(grp)))
+names(adult.sig.genes.gst) <- levels(grp)
+for(i in 1:length(adult.sig.genes.gst)){
+  top <- topTreat(treat,coef=i,n=Inf,p.value=0.05)
+  adult.sig.genes.gst[[i]] <- rownames(top)[top$logFC>0]
+} 
+save(adult.sig.genes.gst,file="./data/gstlist-adult.Rdata")
+```
+
+```{r}
+# Overlap of significant genes between clusters of young and adult
+ol <- matrix(NA,nrow=length(adult.sig.genes.gst),ncol=length(young.sig.genes.gst))
+for(i in 1:nrow(ol)){
+  for(j in 1:length(young.sig.genes.gst)){
+    ol[i,j]<- sum(young.sig.genes.gst[[j]] %in% adult.sig.genes.gst[[i]])
+  }
+}
+pdf(file="./output/Figures/heatmap-geneOL-young-adult.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(ol,Rowv = NA,Colv = NA)
+dev.off()
+```
+
+

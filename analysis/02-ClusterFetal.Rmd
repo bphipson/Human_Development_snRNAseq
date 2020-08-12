@@ -1,0 +1,625 @@
+---
+title: "Clustering the fetal samples"
+author: "Belinda Phipson"
+date: "6/6/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+I tried a number of approaches to integrate the data and used the distribution of the cells from the fetal sample replicates across the clusters to determine how successful the integration was across samples. I also examined sex and batch as additional covariates.
+
+I settled on the following approach:
+
+* Remove mitochondrial, ribosomal and genes with no annotation
+* Gene filtering of lowly expressed genes assuming min cluster size of 20
+* Remove genes on X and Y chromosome so they are not selected to perform clustering
+* Use SCTransform to normalise the data *without* including additional covariates
+* Perform data integration across biological replicates
+    + Use 30 CCA dimensions
+    + Use 3000 anchor features
+* Scale data
+* Run principle components analysis
+* Perform clustering
+    + Use 20 CCA dimensions
+    + Resolution = 0.3 for marker analysis
+* Visualisation with TSNE and clustree
+* Marker analysis 
+
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+```
+
+```{r}
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+# Read in the fetal data
+
+```{r readTargets}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r readDataIn}
+f1 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_1"])
+colnames(f1) <- paste(colnames(f1),"f1",sep="_")
+f2 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_2"])
+colnames(f2) <- paste(colnames(f2),"f2",sep="_")
+f3 <- Read10X(data.dir = targets$FileName2[targets$Group_ID2=="Fetal_3"])
+colnames(f3) <- paste(colnames(f3),"f3",sep="_")
+
+# Combine 3 samples into one big data matrix
+allf <- cbind(f1,f2,f3)
+```
+
+# Gene filtering
+
+## Get gene annotation
+
+I'm using gene annotation information from the `org.Hs.eg.db` package.
+
+```{r}
+columns(org.Hs.eg.db)
+ann <- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(allf),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(allf),ann$SYMBOL)
+ann <- ann[m,]
+table(ann$SYMBOL==rownames(allf))
+```
+
+```{r}
+mito <- grep("mitochondrial",ann$GENENAME)
+length(mito)
+ribo <- grep("ribosomal",ann$GENENAME)
+length(ribo)
+missingEZID <- which(is.na(ann$ENTREZID))
+length(missingEZID)
+```
+
+## Remove mitochondrial and ribosomal genes and genes with no ENTREZID
+
+These genes are not informative for downstream analysis.
+
+```{r}
+chuck <- unique(c(mito,ribo,missingEZID))
+length(chuck)
+allf.keep <- allf[-chuck,]
+ann.keep <- ann[-chuck,]
+table(ann.keep$SYMBOL==rownames(allf.keep))
+```
+
+## Remove very lowly expressed genes
+
+Removing very lowly expressed genes helps to reduce the noise in the data. Here I am choosing to keep genes with at least 1 count in at least 20 cells. This means that a cluster made up of at least 20 cells can potentially be detected (minimum cluster size = 20 cells).
+
+```{r}
+numzero.genes <- rowSums(allf.keep==0)
+
+#avg.exp <- rowMeans(cpm.DGEList(y.kid,log=TRUE))
+
+#plot(avg.exp,numzero.genes,xlab="Average log-normalised-counts",ylab="Number zeroes per gene")
+
+table(numzero.genes > (ncol(allf.keep)-20))
+
+keep.genes <- numzero.genes < (ncol(allf.keep)-20)
+table(keep.genes)
+
+allf.keep <- allf.keep[keep.genes,]
+dim(allf.keep)
+
+ann.keep <- ann.keep[keep.genes,]
+```
+
+The total size of the fetal dataset is `r ncol(allf.keep)` cells and `r nrow(allf.keep)` genes.
+
+# Remove sex chromosome genes
+
+I will remove the sex chromosome genes before clustering so that the sex doesn't play a role in determining the clusters.
+
+```{r}
+sexchr <- ann.keep$CHR %in% c("X","Y")
+
+allf.nosex <- allf.keep[!sexchr,]
+dim(allf.nosex)
+
+ann.nosex <- ann.keep[!sexchr,]
+```
+
+# Save/load data objects
+
+```{r}
+#save(ann,ann.keep,ann.nosex,allf,allf.keep,allf.nosex,file="./output/RDataObjects/fetalObjs.Rdata")
+#load(file="./output/RDataObjects/fetalObjs.Rdata")
+```
+
+
+# Create Seurat objects
+
+```{r}
+biorep <- factor(rep(c("f1","f2","f3"),c(ncol(f1),ncol(f2),ncol(f3))))
+names(biorep) <- colnames(allf.keep)
+sex <- factor(rep(c("m","m","f"),c(ncol(f1),ncol(f2),ncol(f3))))
+names(sex) <- colnames(allf.keep)
+age <- rep(c(0.475,0.475,0.5),c(ncol(f1),ncol(f2),ncol(f3)))
+names(age) <- colnames(allf.keep)
+batch <- rep(c("B2","B1","B2"),c(ncol(f1),ncol(f2),ncol(f3)))
+names(batch) <- colnames(allf.keep)
+
+fetal <- CreateSeuratObject(counts = allf.nosex, project = "fetal")
+fetal <- AddMetaData(object=fetal, metadata = biorep, col.name="biorep")
+fetal <- AddMetaData(object=fetal, metadata = sex, col.name="sex")
+fetal <- AddMetaData(object=fetal, metadata = age, col.name="age")
+fetal <- AddMetaData(object=fetal, metadata = batch, col.name="batch")
+```
+
+```{r}
+fetal.list <- SplitObject(fetal, split.by = "biorep")
+```
+
+# Try new normalisation method: SCTransform
+
+This new method replaces the `NormalizeData`, `FindVariableFeatures` and `ScaleData` functions. It performs regularised negative binomial regression with the total sequencing depth per cell as the covariate (i.e. library size), as well as any other user supplied covariates. The Pearson residuals are then used in downstream analysis.
+
+Upon further reading, it is not clear that this is compatible with the integration method in Seurat (future work by the Seurat team). The method is slower than previous functions but not prohibitively so (~10 minutes for the fetal dataset of `r ncol(fetal)` cells).
+
+Although this method isn't fully compatible with the integration approach, it seemed to contribute to giving the ``best" clustering results following data integration of the three samples.
+
+```{r sctnorm,}
+# This is a bit slow
+for (i in 1:length(fetal.list)) {
+    fetal.list[[i]] <- SCTransform(fetal.list[[i]], verbose = FALSE)
+#    fetal.list[[i]] <- GetResidual(fetal.list[[i]])
+}
+```
+
+# Perform the usual normalisation
+
+```{r}
+#for (i in 1:length(fetal.list)) {
+#    fetal.list[[i]] <- NormalizeData(fetal.list[[i]], verbose = FALSE)
+#    fetal.list[[i]] <- FindVariableFeatures(fetal.list[[i]], selection.method #= "vst", 
+#                                            nfeatures = 2000, verbose = FALSE)
+#}
+```
+
+
+# Perform integration
+
+There are two steps:
+
+* Find integration anchors
+* Perform integration which should batch-correct the data
+
+The default number of dimensions is 30.
+Should increase the number of integration anchors from 2000 (default) to 3000 as suggested by Satija lab vignette on SCTransform use.
+
+```{r intanchors}
+fetal.anchors <- FindIntegrationAnchors(object.list = fetal.list, dims = 1:30, anchor.features = 3000)
+```
+
+```{r integrate}
+fetal.integrated <- IntegrateData(anchorset = fetal.anchors, dims = 1:30)
+```
+
+# Perform clustering
+
+```{r}
+DefaultAssay(object = fetal.integrated) <- "integrated"
+```
+
+## Perform scaling and PCA
+
+```{r pca}
+fetal.integrated <- ScaleData(fetal.integrated, verbose = FALSE)
+fetal.integrated <- RunPCA(fetal.integrated, npcs = 50, verbose = FALSE)
+ElbowPlot(fetal.integrated,ndims=50)
+```
+
+```{r,fig.height=10, fig.width=12}
+VizDimLoadings(fetal.integrated, dims = 1:4, reduction = "pca")
+```
+
+```{r}
+DimPlot(fetal.integrated, reduction = "pca",group.by="biorep")
+DimPlot(fetal.integrated, reduction = "pca",group.by="sex")
+DimPlot(fetal.integrated, reduction = "pca",group.by="batch")
+```
+
+```{r,fig.height=10, fig.width=12}
+DimHeatmap(fetal.integrated, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(fetal.integrated, dims = 16:30, cells = 500, balanced = TRUE)
+```
+
+## Perform nearest neighbours clustering
+
+```{r clust}
+fetal.integrated <- FindNeighbors(fetal.integrated, dims = 1:30)
+fetal.integrated <- FindClusters(fetal.integrated, resolution = 0.3)
+table(Idents(fetal.integrated))
+```
+
+```{r, fig.width=10,fig.height=6}
+barplot(table(Idents(fetal.integrated)),ylab="Number of cells",xlab="Clusters")
+title("Number of cells in each cluster")
+```
+
+
+## Visualisation with TSNE
+
+```{r tsne}
+set.seed(10)
+fetal.integrated <- RunTSNE(fetal.integrated, reduction = "pca", dims = 1:30)
+```
+
+```{r}
+pdf(file="./output/Figures/tsne-fetalALL.pdf",width=10,height=8,onefile = FALSE)
+DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+dev.off()
+```
+
+```{r}
+DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+```
+
+```{r,fig.width=12,fig.height=4}
+DimPlot(fetal.integrated, reduction = "tsne", split.by = "biorep",label=TRUE,label.size = 5)+NoLegend()
+```
+
+```{r,fig.width=12,fig.height=4}
+DimPlot(fetal.integrated, reduction = "tsne", split.by = "sex",label=TRUE,label.size = 5)+NoLegend()
+```
+
+
+```{r}
+DimPlot(fetal.integrated, reduction = "tsne", group.by = "biorep")
+```
+
+```{r}
+DimPlot(fetal.integrated, reduction = "tsne", group.by = "sex")
+```
+
+```{r}
+DimPlot(fetal.integrated, reduction = "tsne", group.by = "batch")
+```
+
+```{r}
+#FeaturePlot(fetal.integrated, features = c("XIST"))
+```
+
+
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(fetal.integrated),fetal@meta.data$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3),legend=TRUE)
+```
+
+
+# Visualisation with clustree
+
+```{r}
+clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
+```
+```{r clustree}
+for(i in 1:length(clusres)){
+  fetal.integrated <- FindClusters(fetal.integrated, 
+                                   resolution = clusres[i])
+}
+```
+
+```{r}
+pct.male <- function(x) {mean(x=="m")}
+pct.female <- function(x) {mean(x=="f")}
+biorep1 <- function(x) {mean(x=="f1")}
+biorep2 <- function(x) {mean(x=="f2")}
+biorep3 <- function(x) {mean(x=="f3")}
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep1",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep2",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "biorep", node_colour_aggr = "biorep3",assay="RNA")
+```
+
+
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.female",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.male",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+#clustree(fetal.integrated, prefix = "integrated_snn_res.",
+#         node_colour = "XIST", node_colour_aggr = "median",
+#         assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(fetal.integrated, prefix = "integrated_snn_res.",
+         node_colour = "TNNT2", node_colour_aggr = "median",
+         assay="RNA")
+```
+
+# Save/load Seurat object
+
+```{r}
+#saveRDS(fetal.integrated,file="./output/RDataObjects/fetal-int.Rds")
+#fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
+```
+
+
+# Find Markers
+
+```{r}
+DefaultAssay(fetal.integrated) <- "RNA"
+Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
+```
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(fetal.integrated),fetal.integrated@meta.data$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3),legend=TRUE)
+```
+
+```{r markers}
+#fetalmarkers <- FindAllMarkers(fetal.integrated, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+# Limma-trend for DE
+
+y.fetal <- DGEList(allf.keep)
+y.fetal$genes <- ann.keep
+
+logcounts <- normCounts(y.fetal,log=TRUE,prior.count=0.5)
+
+maxclust <- length(levels(Idents(fetal.integrated)))-1
+
+grp <- paste("c",Idents(fetal.integrated),sep = "")
+grp <- factor(grp,levels = paste("c",0:maxclust,sep=""))
+
+design <- model.matrix(~0+grp)
+colnames(design) <- levels(grp)
+
+mycont <- matrix(NA,ncol=length(levels(grp)),nrow=length(levels(grp)))
+rownames(mycont)<-colnames(mycont)<-levels(grp)
+diag(mycont)<-1
+mycont[upper.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+mycont[lower.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+
+fit <- lmFit(logcounts,design)
+fit.cont <- contrasts.fit(fit,contrasts=mycont)
+fit.cont <- eBayes(fit.cont,trend=TRUE,robust=TRUE)
+
+fit.cont$genes <- ann.keep
+
+summary(decideTests(fit.cont))
+
+treat <- treat(fit.cont,lfc=0.5)
+
+dt<-decideTests(treat)
+
+summary(dt)
+
+```
+
+
+```{r,fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:ncol(mycont)){
+  plotMD(treat,coef=i,status = dt[,i],hl.cex=0.5)
+  abline(h=0,col=colours()[c(226)])
+  lines(lowess(treat$Amean,treat$coefficients[,i]),lwd=1.5,col=4)
+}
+```
+
+## Write out marker genes for each cluster
+
+```{r}
+contnames <- colnames(mycont)
+
+for(i in 1:length(contnames)){
+  topsig <- topTreat(treat,coef=i,n=Inf,p.value=0.05)
+  write.csv(topsig[topsig$logFC>0,],file=paste("./output/MarkerAnalysis/Fetal/Up-Cluster-",contnames[i],".csv",sep=""))
+  write.csv(topGO(goana(de=topsig$ENTREZID[topsig$logFC>0],universe=treat$genes$ENTREZID,species="Hs"),number=50),
+            file=paste("./output/MarkerAnalysis/Fetal/GO-Cluster-",contnames[i],".csv",sep=""))
+
+}
+
+#write.csv(fetalmarkers,file="./output/AllFetal-clustermarkers.csv")
+```
+
+
+
+# Heatmap of pre-defined heart cell type markers
+
+```{r heatmap}
+hm <- read.delim("./data/heart-markers-long.txt",stringsAsFactors = FALSE)
+hgene <- toupper(hm$Gene)
+hgene <- unique(hgene)
+
+m <- match(hgene,rownames(logcounts))
+m <- m[!is.na(m)]
+
+sam <- factor(fetal.integrated$biorep)
+newgrp <- paste(grp,sam,sep=".")
+newgrp <- factor(newgrp,levels=paste(rep(levels(grp),each=3),levels(sam),sep="."))
+o <-order(newgrp)
+
+annot <- data.frame(CellType=grp,Sample=sam,NewGroup=newgrp)
+
+mycelltypes <- hm$Celltype[match(rownames(logcounts)[m],toupper(hm$Gene))]
+mycelltypes <- factor(mycelltypes)
+
+mygenes <- rownames(logcounts)[m]
+mygenelab <- paste(mygenes,mycelltypes,sep="_")
+
+myColors <- list(Clust=NA,Sample=NA,Celltypes=NA)
+myColors$Clust<-ggplotColors(22)
+names(myColors$Clust)<-levels(grp)
+myColors$Sample <- brewer.pal(3, "Set1")
+names(myColors$Sample) <- levels(sam)
+myColors$Celltypes <- ggplotColors(24)
+names(myColors$Celltypes) <- levels(mycelltypes) 
+
+pdf(file="./output/Figures/fetal-heatmap-hmarkers.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(logcounts[m,o],Rowv=NA,Colv=NA,labRow=mygenelab,labCol=NA,
+         annCol=list(Clust=grp[o],Sample=sam[o]),
+         annRow = list(Celltypes=mycelltypes),
+         annColors = myColors, 
+         fontsize=16,color="-RdYlBu")
+dev.off()
+```
+
+# Summarise expression across cells 
+```{r summariseExp}
+sumexpr <- matrix(NA,nrow=nrow(logcounts),ncol=length(levels(newgrp)))
+rownames(sumexpr) <- rownames(logcounts)
+colnames(sumexpr) <- levels(newgrp)
+
+for(i in 1:nrow(sumexpr)){
+  sumexpr[i,] <- tapply(logcounts[i,],newgrp,median)
+}
+```
+
+
+```{r summaheatmap, fig.width=12,fig.height=12}
+clust <- rep(levels(grp),each=3)
+samps <- rep(levels(sam),22)
+pdf(file="./output/Figures/fetal-heatmap-hmarkers-summarised.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+         annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu")
+dev.off()
+```
+
+```{r, fig.width=10,fig.height=12}
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+#         annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=12,color="-RdYlBu")
+```
+
+
+
+```{r sigheatmap, fig.width=12,fig.height=12}
+sig.genes <- gene.label <- vector("list", length(levels(grp)))
+for(i in 1:length(sig.genes)){
+  top <- topTreat(treat,coef=i,n=1000)
+  sig.genes[[i]] <- rownames(top)[top$logFC>0][1:5]
+  gene.label[[i]] <- paste(rownames(top)[top$logFC>0][1:5],levels(grp)[i],sep="-")
+} 
+
+csig <- unlist(sig.genes)
+genes <- unlist(gene.label)
+
+pdf(file="./output/Figures/fetal-heatmap-siggenes-summarised.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+dev.off()
+```
+
+```{r heatmap-sig-genes, fig.width=10,fig.height=12}
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+```
+
+# Assign cell types to clusters
+
+Evangelyn and Enzo annotated the clusters to cell types using a variety of information available including:
+
+* Heatmap of known marker genes from literature
+* Lists of marker genes for each cluster
+* GO analysis of marker genes
+* tSNEs with various covariates highlighted
+
+```{r, fig.width=10,fig.height=10}
+#fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
+#DefaultAssay(fetal.integrated) <- "RNA"
+#Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
+
+fetal.annot <- fetal.integrated
+new.cluster.ids <- c("Cardiomyocytes1","Cardiomyocyte (conduction)","Proliferative CM1",
+                     "Fibroblast1","Vascular (endothelial?) (Female)","Cardiomyocytes (Male)",
+                     "Cardiomyocytes (Female)","Fibroblast2","Cardiomyocytes2","Endothelial cells",
+                     "Pericyte","Macrophage","Proliferative CM2","Epicardial-like",
+                     "Neurons","Fibroblast (Female?)","Proliferative CM (Male)","Smooth muscle cells",
+                     "Endothelial cells/ Immune?","Erythroid","Lymphatic endothelial cells","Mast cells")
+
+  
+  
+names(new.cluster.ids) <- levels(fetal.annot)
+fetal.annot <- RenameIdents(fetal.annot, new.cluster.ids)
+DimPlot(fetal.annot, reduction = "tsne", label = TRUE, pt.size = 0.5) + NoLegend()
+```
+
+# Create list of marker genes for GST purposes
+
+```{r}
+sig.genes.gst <- vector("list", length(levels(grp)))
+names(sig.genes.gst) <- levels(fetal.annot)
+for(i in 1:length(sig.genes.gst)){
+  top <- topTreat(treat,coef=i,n=Inf,p.value=0.05)
+  sig.genes.gst[[i]] <- rownames(top)[top$logFC>0]
+} 
+save(sig.genes.gst,file="./data/gstlist-fetal.Rdata")
+```

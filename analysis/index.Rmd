@@ -8,4 +8,36 @@ editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+# Single nuclei RNA-seq of the heart (LV)
+
+The data analysis consists of a number of steps that are detailed in the scripts listed below.
+
+## Quality control and clustering
+
+* [Quality control of the cells](01-QualityControl.html)
+* [Differential expression analysis of pseudobulk](01a-DEpseudobulk.html)
+* Data integration and clustering between biological replicates within group
+    + [Fetal heart samples](02-ClusterFetal.html)
+    + [Young heart samples](03-ClusterYoung.html)
+    + [Adult heart samples](04-ClusterAdult.html)
+    
+## Normal development analysis
+
+* [Differential expression analysis within broad cell types](DE-BroadCellTypes.html)
+
+* Recluster broad cell lineages
+    + [Cardiomyocytes](07a-ClustCardioFYA.html)
+    + [Epicardial cells](08-ClustEpicardial.html)
+    + [Fibroblast](09-ClustFibroblast.html)
+    + [Smooth muscle cells](10-ClustSMC.html)
+    + [Endothelial cells](11-ClustEndo.html)
+    + [Immune cells](12-ClustImmune.html)
+    + [Neurons](13-ClustNeuron.html)
+    
+* Differential expression analysis: normal development
+    + [Cardiomyocytes](07b-DECardioFYA.html)
+    
+## Differential proportions analysis with propeller
+* [Differential proportions analysis](06-Celltype-Composition.html) 
+
+
