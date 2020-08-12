@@ -1,7 +1,7 @@
-name: "Human_Development_snRNAseq"
+name: Human_Development_snRNAseq
 output_dir: ../docs
 navbar:
-  title: "Human_Development_snRNAseq"
+  title: Human_Development_snRNAseq
   left:
   - text: Home
     href: index.html
@@ -9,6 +9,10 @@ navbar:
     href: about.html
   - text: License
     href: license.html
+  right:
+  - icon: fa-github
+    text: Source code
+    href: https://github.com/bphipson/Human_Development_snRNAseq
 output:
   workflowr::wflow_html:
     toc: yes
