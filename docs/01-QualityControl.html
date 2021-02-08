@@ -1,0 +1,3511 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Belinda Phipson" />
+
+
+<title>Quality control of the cells</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Porello-heart-snRNAseq</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://git.mcri.edu.au/bioinformatics/Porello-heart-snRNAseq">
+    <span class="fa fa-gitlab"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Quality control of the cells</h1>
+<h4 class="author">Belinda Phipson</h4>
+<h4 class="date">6/3/2019</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2019-06-12
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>Porello-heart-snRNAseq/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.3.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20190603code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20190603)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20190603code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20190603)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgitmcrieduaubioinformaticsporelloheartsnrnaseqtree0b368286635cf4024be80daa619ccc0485acbcaatargetblank0b36828a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/tree/0b368286635cf4024be80daa619ccc0485acbcaa" target="_blank">0b36828</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgitmcrieduaubioinformaticsporelloheartsnrnaseqtree0b368286635cf4024be80daa619ccc0485acbcaatargetblank0b36828a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the R Markdown and HTML files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view them.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/0b368286635cf4024be80daa619ccc0485acbcaa/analysis/01-QualityControl.Rmd" target="_blank">0b36828</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-12
+</td>
+<td>
+update QC
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/6f2bf8dbdab33caf2cd0d6a89f0079570cbf5693/public/01-QualityControl.html" target="_blank">6f2bf8d</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-09
+</td>
+<td>
+Build site.
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/225f001edefbee518ba7ff77279b3db78928fea2/analysis/01-QualityControl.Rmd" target="_blank">225f001</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-09
+</td>
+<td>
+Add MDSplots to QC
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/01-QualityControl.html" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+<td>
+Build site.
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/565d32b2dc2152d1d5c214bdafda9b8b8f623ec3/analysis/01-QualityControl.Rmd" target="_blank">565d32b</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+<td>
+Adding cluster of fetal samples
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/74d2e89c73ab6102eb4ced60d7f02beda4c06604/analysis/01-QualityControl.Rmd" target="_blank">74d2e89</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+<td>
+added new plots to QC report
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/01-QualityControl.html" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+<td>
+Build site.
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/ce619de58f5f3894eccd11bd447fd99d67cbf3d5/analysis/01-QualityControl.Rmd" target="_blank">ce619de</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+<td>
+updated QC analysis and added fetal clustering ananalysis (incomplete)
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/5a0d4e12fd5ef1ff0687d3548528cdcb7cef8a12/analysis/01-QualityControl.Rmd" target="_blank">5a0d4e1</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-05
+</td>
+<td>
+Added QC analysis and plots
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The first step of the analysis is to perform quality control of the cells to make sure that low quality cells are removed prior to further analysis.</p>
+</div>
+<div id="load-libraries-and-functions" class="section level1">
+<h1>Load libraries and functions</h1>
+<pre class="r"><code>library(edgeR)</code></pre>
+<pre><code>Loading required package: limma</code></pre>
+<pre class="r"><code>library(RColorBrewer)
+library(org.Hs.eg.db)</code></pre>
+<pre><code>Loading required package: AnnotationDbi</code></pre>
+<pre><code>Loading required package: stats4</code></pre>
+<pre><code>Loading required package: BiocGenerics</code></pre>
+<pre><code>Loading required package: parallel</code></pre>
+<pre><code>
+Attaching package: &#39;BiocGenerics&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:parallel&#39;:
+
+    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    clusterExport, clusterMap, parApply, parCapply, parLapply,
+    parLapplyLB, parRapply, parSapply, parSapplyLB</code></pre>
+<pre><code>The following object is masked from &#39;package:limma&#39;:
+
+    plotMA</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    IQR, mad, sd, var, xtabs</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    anyDuplicated, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter,
+    Find, get, grep, grepl, intersect, is.unsorted, lapply, Map,
+    mapply, match, mget, order, paste, pmax, pmax.int, pmin,
+    pmin.int, Position, rank, rbind, Reduce, rownames, sapply,
+    setdiff, sort, table, tapply, union, unique, unsplit, which,
+    which.max, which.min</code></pre>
+<pre><code>Loading required package: Biobase</code></pre>
+<pre><code>Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    &#39;browseVignettes()&#39;. To cite Bioconductor, see
+    &#39;citation(&quot;Biobase&quot;)&#39;, and for packages &#39;citation(&quot;pkgname&quot;)&#39;.</code></pre>
+<pre><code>Loading required package: IRanges</code></pre>
+<pre><code>Loading required package: S4Vectors</code></pre>
+<pre><code>
+Attaching package: &#39;S4Vectors&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:base&#39;:
+
+    expand.grid</code></pre>
+<pre><code></code></pre>
+<pre class="r"><code>library(limma)
+library(Seurat)</code></pre>
+<pre><code>Registered S3 method overwritten by &#39;R.oo&#39;:
+  method        from       
+  throw.default R.methodsS3</code></pre>
+<pre><code>Registered S3 methods overwritten by &#39;ggplot2&#39;:
+  method         from 
+  [.quosures     rlang
+  c.quosures     rlang
+  print.quosures rlang</code></pre>
+<pre class="r"><code>library(monocle)</code></pre>
+<pre><code>Loading required package: Matrix</code></pre>
+<pre><code>
+Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:S4Vectors&#39;:
+
+    expand</code></pre>
+<pre><code>Loading required package: ggplot2</code></pre>
+<pre><code>Loading required package: VGAM</code></pre>
+<pre><code>Loading required package: splines</code></pre>
+<pre><code>Loading required package: DDRTree</code></pre>
+<pre><code>Loading required package: irlba</code></pre>
+<pre class="r"><code>library(cowplot)</code></pre>
+<pre><code>
+Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:ggplot2&#39;:
+
+    ggsave</code></pre>
+<pre class="r"><code>library(DelayedArray)</code></pre>
+<pre><code>Loading required package: matrixStats</code></pre>
+<pre><code>
+Attaching package: &#39;matrixStats&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:Biobase&#39;:
+
+    anyMissing, rowMedians</code></pre>
+<pre><code>Loading required package: BiocParallel</code></pre>
+<pre><code>
+Attaching package: &#39;DelayedArray&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:matrixStats&#39;:
+
+    colMaxs, colMins, colRanges, rowMaxs, rowMins, rowRanges</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    aperm, apply, rowsum</code></pre>
+<pre class="r"><code>library(scran)</code></pre>
+<pre><code>Loading required package: SingleCellExperiment</code></pre>
+<pre><code>Loading required package: SummarizedExperiment</code></pre>
+<pre><code>Loading required package: GenomicRanges</code></pre>
+<pre><code>Loading required package: GenomeInfoDb</code></pre>
+<pre><code>
+Attaching package: &#39;SingleCellExperiment&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:edgeR&#39;:
+
+    cpm</code></pre>
+<pre class="r"><code>library(NMF)</code></pre>
+<pre><code>Loading required package: pkgmaker</code></pre>
+<pre><code>Loading required package: registry</code></pre>
+<pre><code>
+Attaching package: &#39;pkgmaker&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:S4Vectors&#39;:
+
+    new2</code></pre>
+<pre><code>The following object is masked from &#39;package:base&#39;:
+
+    isFALSE</code></pre>
+<pre><code>Loading required package: rngtools</code></pre>
+<pre><code>Loading required package: cluster</code></pre>
+<pre><code>NMF - BioConductor layer [OK] | Shared memory capabilities [NO: synchronicity] | Cores 31/32</code></pre>
+<pre><code>  To enable shared memory capabilities, try: install.extras(&#39;
+NMF
+&#39;)</code></pre>
+<pre><code>
+Attaching package: &#39;NMF&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:DelayedArray&#39;:
+
+    seed</code></pre>
+<pre><code>The following object is masked from &#39;package:BiocParallel&#39;:
+
+    register</code></pre>
+<pre><code>The following object is masked from &#39;package:S4Vectors&#39;:
+
+    nrun</code></pre>
+<pre class="r"><code>library(workflowr)</code></pre>
+<pre><code>This is workflowr version 1.3.0
+Run ?workflowr for help getting started</code></pre>
+<pre class="r"><code>source(&quot;/group/bioi1/belinda/SingleCell/Normalisation/normCounts.R&quot;)
+source(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R&quot;)
+source(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R&quot;)</code></pre>
+</div>
+<div id="read-in-data" class="section level1">
+<h1>Read in data</h1>
+<p>I have stored the sample-level information in a targets file under the data directory. The cellranger output files are read in using the Seurat function <code>Read10X</code>.</p>
+<pre class="r"><code>targets &lt;- read.delim(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt&quot;,header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 &lt;- paste(targets$FileName,&quot;/&quot;,sep=&quot;&quot;)
+targets$Group_ID2 &lt;- gsub(&quot;LV_&quot;,&quot;&quot;,targets$Group_ID)
+group &lt;- c(&quot;Fetal_1&quot;,&quot;Fetal_2&quot;,&quot;Fetal_3&quot;,
+           &quot;Young_1&quot;,&quot;Young_2&quot;,&quot;Young_3&quot;,
+           &quot;Adult_1&quot;,&quot;Adult_2&quot;,&quot;Adult_3&quot;, 
+           &quot;Diseased_1&quot;,&quot;Diseased_2&quot;,
+           &quot;Diseased_3&quot;,&quot;Diseased_4&quot;)
+m &lt;- match(group, targets$Group_ID2)
+targets &lt;- targets[m,]
+
+
+f1 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Fetal_1&quot;])
+f2 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Fetal_2&quot;])
+f3 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Fetal_3&quot;])
+
+y1 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Young_1&quot;])
+y2 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Young_2&quot;])
+y3 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Young_3&quot;])
+
+a1 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Adult_1&quot;])
+a2 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Adult_2&quot;])
+a3 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Adult_3&quot;])
+
+d1 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Diseased_1&quot;])
+d2 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Diseased_2&quot;])
+d3 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Diseased_3&quot;])
+d4 &lt;- Read10X(data.dir = targets$FileName2[targets$Group_ID2==&quot;Diseased_4&quot;])</code></pre>
+</div>
+<div id="basic-qc" class="section level1">
+<h1>Basic QC</h1>
+<p>I will QC each sample individually. I examined the distribution of library sizes per cell, as well as the proportions of zeroes in each cell and the number of genes detected per cell. I also looked at the ribosomal and mitochondrial content per cell. The ribosomal and mitochondrial content is very low compared to single cell protocols and mostly the number of genes detected is at least 500 per cell. Considering that cellranger has already performed cell filtering using their default setting, I’m keeping all cells for now and will proceed with clustering.</p>
+<div id="get-gene-annotation" class="section level2">
+<h2>Get gene annotation</h2>
+<p>I’m using the org.Hs.eg.db annotation package to extract gene symbols, entrez ID, ensembl ID and the genename. This is useful for identifying ribosomal and mitochondrial related genes for QC purposes, as well as for downstream analysis.</p>
+<pre class="r"><code>columns(org.Hs.eg.db)</code></pre>
+<pre><code> [1] &quot;ACCNUM&quot;       &quot;ALIAS&quot;        &quot;ENSEMBL&quot;      &quot;ENSEMBLPROT&quot; 
+ [5] &quot;ENSEMBLTRANS&quot; &quot;ENTREZID&quot;     &quot;ENZYME&quot;       &quot;EVIDENCE&quot;    
+ [9] &quot;EVIDENCEALL&quot;  &quot;GENENAME&quot;     &quot;GO&quot;           &quot;GOALL&quot;       
+[13] &quot;IPI&quot;          &quot;MAP&quot;          &quot;OMIM&quot;         &quot;ONTOLOGY&quot;    
+[17] &quot;ONTOLOGYALL&quot;  &quot;PATH&quot;         &quot;PFAM&quot;         &quot;PMID&quot;        
+[21] &quot;PROSITE&quot;      &quot;REFSEQ&quot;       &quot;SYMBOL&quot;       &quot;UCSCKG&quot;      
+[25] &quot;UNIGENE&quot;      &quot;UNIPROT&quot;     </code></pre>
+<pre class="r"><code>ann &lt;- select(org.Hs.eg.db,keys=rownames(f1),columns=c(&quot;SYMBOL&quot;,&quot;ENTREZID&quot;,&quot;ENSEMBL&quot;,&quot;GENENAME&quot;),keytype = &quot;SYMBOL&quot;)</code></pre>
+<pre><code>&#39;select()&#39; returned 1:many mapping between keys and columns</code></pre>
+<pre class="r"><code>m &lt;- match(rownames(f1),ann$SYMBOL)
+ann &lt;- ann[m,]
+table(ann$SYMBOL==rownames(f1))</code></pre>
+<pre><code>
+ TRUE 
+33939 </code></pre>
+<pre class="r"><code>mito &lt;- grep(&quot;mitochondrial&quot;,ann$GENENAME)
+length(mito)</code></pre>
+<pre><code>[1] 226</code></pre>
+<pre class="r"><code>ribo &lt;- grep(&quot;ribosomal&quot;,ann$GENENAME)
+length(ribo)</code></pre>
+<pre><code>[1] 198</code></pre>
+</div>
+<div id="fetal-1" class="section level2">
+<h2>Fetal 1</h2>
+<pre class="r"><code># Fetal 1
+par(mfrow=c(1,2))
+libsize &lt;- colSums(f1)
+pz &lt;- colMeans(f1==0)
+numgene &lt;- colSums(f1!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   748.4111  9962.9469 24040.7100 27368.1812 29287.8762 36070.7984
+ [7] 40166.1477 44773.4156 46437.1512 53604.0124 57827.3414 62818.5483</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  444.6676 3607.0781 5604.3900 6048.2371 7379.7784 8563.3707 8914.7496</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.7373302 0.7476835 0.7825576 0.8217909 0.8348687 0.8937188 0.9868980</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Fetal 1&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Fetal 1&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-6-1">
+Past versions of unnamed-chunk-6-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-6-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-6-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-7-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-7-1">
+Past versions of unnamed-chunk-7-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-7-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-7-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2</code></pre>
+<pre class="r"><code>par(mfrow=c(1,2))
+propmito &lt;- colSums(f1[mito,])/libsize
+propribo &lt;- colSums(f1[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Fetal 1: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Fetal 1: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-8-1">
+Past versions of unnamed-chunk-8-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-8-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-8-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="fetal-2" class="section level2">
+<h2>Fetal 2</h2>
+<pre class="r"><code># Fetal 2
+par(mfrow=c(1,2))
+libsize &lt;- colSums(f2)
+pz &lt;- colMeans(f2==0)
+numgene &lt;- colSums(f2!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   914.8093  8566.1059 19217.9110 28069.4110 31970.0720 34070.4280
+ [7] 35870.7331 38721.2161 41421.6737 44722.2331 49222.9958 52673.5805
+[13] 58224.5212 64825.6398 65275.7161 65725.7924 66475.9195 67376.0720
+[19] 67676.1229 68126.1992 69176.3771 69926.5042 70526.6059 74427.2670</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  468.3299 3223.0165 4543.7567 6826.7504 7449.3850 7656.9299 8109.7551
+[8] 9260.6858</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.7271373 0.7610491 0.7743914 0.7805066 0.7988523 0.8661199 0.9050350
+[8] 0.9862008</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Fetal 2&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Fetal 2&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-9-1">
+Past versions of unnamed-chunk-9-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-9-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-9-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-10-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-10-1">
+Past versions of unnamed-chunk-10-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-10-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-10-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(f2[mito,])/libsize
+propribo &lt;- colSums(f2[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Fetal 2: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Fetal 2: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-11-1">
+Past versions of unnamed-chunk-11-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-11-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-11-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="fetal-3" class="section level2">
+<h2>Fetal 3</h2>
+<pre class="r"><code># Fetal 3
+par(mfrow=c(1,2))
+libsize &lt;- colSums(f3)
+pz &lt;- colMeans(f3==0)
+numgene &lt;- colSums(f3!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   855.0211 13126.2327 35437.5266 39527.9305 47336.8833 49568.0127
+ [7] 52170.9970 55889.5460 60351.8047 72623.0164 76341.5654 84150.5182
+[13] 91029.8338</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]   464.8103  3765.3342  6609.1818  8103.7587  8560.4350  9100.1433
+[7]  9328.4814 10138.0439</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.7012863 0.7251398 0.7318677 0.7477700 0.7612258 0.8052629 0.8890558
+[8] 0.9863045</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Fetal 3&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Fetal 3&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-12-1">
+Past versions of unnamed-chunk-12-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-12-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-12-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-13-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-13-1">
+Past versions of unnamed-chunk-13-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-13-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-13-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(f3[mito,])/libsize
+propribo &lt;- colSums(f3[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Fetal 3: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Fetal 3: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-14-1">
+Past versions of unnamed-chunk-14-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-14-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-14-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="young-1" class="section level2">
+<h2>Young 1</h2>
+<pre class="r"><code># Young 1
+par(mfrow=c(1,2))
+libsize &lt;- colSums(y1)
+pz &lt;- colMeans(y1==0)
+numgene &lt;- colSums(y1!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]  1128.536  8307.830 22405.353 25016.005 34283.821 38069.267 39896.723
+ [8] 43943.234 48250.811 54385.844 55299.572 56604.898 57649.159 63523.127</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  511.8448 1043.3141 3302.0583 5494.3689 6391.2232 6739.9999 8068.6730</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.7622596 0.8014084 0.8116850 0.8381105 0.9027061 0.9692591 0.9849187</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Young 1&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Young 1&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-15-1">
+Past versions of unnamed-chunk-15-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-15-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-15-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-16-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-16-1">
+Past versions of unnamed-chunk-16-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-16-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-16-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(y1[mito,])/libsize
+propribo &lt;- colSums(y1[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Young 1: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Young 1: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-17-1">
+Past versions of unnamed-chunk-17-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-17-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-17-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="young-2" class="section level2">
+<h2>Young 2</h2>
+<pre class="r"><code># Young 2
+par(mfrow=c(1,2))
+libsize &lt;- colSums(y2)
+pz &lt;- colMeans(y2==0)
+numgene &lt;- colSums(y2!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   6020.806  54822.374  69591.269  76333.591  83396.976  97523.745
+ [7] 112934.766 118392.836 121282.403 122887.718 123850.907 124814.095
+[13] 125777.284 126740.473 128345.788 129308.977 130272.165 131235.354
+[19] 132519.606 133161.732 134445.984 135730.235 136693.424 137977.676
+[25] 138940.865 139904.054 140546.180 141188.305 143435.746 144077.872
+[31] 145041.061 156278.264</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  3049.700  9748.472 12208.177</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.6402906 0.7127649 0.9101417</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Young 2&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Young 2&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-18-1">
+Past versions of unnamed-chunk-18-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-18-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-18-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-19-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-19-1">
+Past versions of unnamed-chunk-19-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-19-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-19-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(y2[mito,])/libsize
+propribo &lt;- colSums(y2[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Young 2: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Young 2: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-20-1">
+Past versions of unnamed-chunk-20-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-20-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-20-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="young-3" class="section level2">
+<h2>Young 3</h2>
+<pre class="r"><code># Young 3
+par(mfrow=c(1,2))
+libsize &lt;- colSums(y3)
+pz &lt;- colMeans(y3==0)
+numgene &lt;- colSums(y3!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]  1092.059  4834.037 16416.351 19623.761 24791.255 27820.476 30671.507
+ [8] 33522.538 34948.054 38333.653 45817.610 48668.641 51519.673 54192.514
+[15] 57756.303 61498.282 64705.692 67913.102 70051.375 72189.649 75753.438
+[22] 81990.068 88048.509</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  703.5671 2840.3481</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.9163102 0.9792697</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Young 3&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Young 3&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-21-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-21-1">
+Past versions of unnamed-chunk-21-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-21-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-21-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-22-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-22-1">
+Past versions of unnamed-chunk-22-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-22-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-22-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(y3[mito,])/libsize
+propribo &lt;- colSums(y3[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Young 3: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Young 3: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-23-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-23-1">
+Past versions of unnamed-chunk-23-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-23-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-23-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="adult-1" class="section level2">
+<h2>Adult 1</h2>
+<pre class="r"><code># Adult 1
+par(mfrow=c(1,2))
+libsize &lt;- colSums(a1)
+pz &lt;- colMeans(a1==0)
+numgene &lt;- colSums(a1!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   7571.146  52089.152  57964.625  64518.037  74461.145  87341.989
+ [7]  87793.949  89375.807  90279.726  91183.644  94573.340 107002.225</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]   520.9095  3410.7457  7681.5657  9190.4182 12080.2545</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.6440598 0.7292077 0.7736655 0.8995036 0.9846516</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Adult 1&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Adult 1&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-24-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-24-1">
+Past versions of unnamed-chunk-24-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-24-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-24-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-25-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-25-1">
+Past versions of unnamed-chunk-25-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-25-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-25-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(a1[mito,])/libsize
+propribo &lt;- colSums(a1[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Adult 1: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Adult 1: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-26-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-26-1">
+Past versions of unnamed-chunk-26-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-26-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-26-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="adult-2" class="section level2">
+<h2>Adult 2</h2>
+<pre class="r"><code># Adult 2
+par(mfrow=c(1,2))
+libsize &lt;- colSums(a2)
+pz &lt;- colMeans(a2==0)
+numgene &lt;- colSums(a2!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   2188.160   7238.031  32992.375  39557.207  51171.911  60261.680
+ [7]  67331.499  72886.358  78441.216  88540.959  94600.804 107730.470
+[13] 113285.328 115810.264 121870.109 126919.981 130454.891 139039.672
+[19] 150654.376 152674.324 154694.273 156714.221 158734.170 160754.118
+[25] 162269.080 164794.015 166813.964 168328.925 184993.501 186508.462
+[31] 188528.410 190548.359 192568.307 195598.230 196608.204 199638.127
+[37] 200648.102 203678.024 212262.805 216302.703 218322.651 220342.600
+[43] 222362.548 224382.497 225897.458 226907.432 228927.381 251651.802</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]   889.0499  2908.6962  7241.1634 11052.4314 15254.5988</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.5505289 0.6743442 0.7866418 0.9142963 0.9738045</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Adult 2&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Adult 2&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-27-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-27-1">
+Past versions of unnamed-chunk-27-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-27-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-27-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-28-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-28-1">
+Past versions of unnamed-chunk-28-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-28-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-28-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(a2[mito,])/libsize
+propribo &lt;- colSums(a2[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Adult 2: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Adult 2: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-29-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-29-1">
+Past versions of unnamed-chunk-29-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-29-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-29-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="adult-3" class="section level2">
+<h2>Adult 3</h2>
+<pre class="r"><code># Adult 3
+par(mfrow=c(1,2))
+libsize &lt;- colSums(a3)
+pz &lt;- colMeans(a3==0)
+numgene &lt;- colSums(a3!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   2212.058   9412.938  30168.417  39487.204  50076.734  54736.127
+ [7]  62360.589  73373.700  86504.718  89893.367  96247.085 109378.103
+[13] 122509.120 137334.462 155972.035 165714.403 177151.095 179692.583
+[19] 180539.745 181810.489 183081.232 184775.557 186469.882 188587.788
+[25] 189858.532 191976.438 193247.181 195365.087 196635.831 198330.156
+[31] 209343.267</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]   897.0151  3625.1939  6353.3728  7540.9330 10397.4967 13607.1189</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.5990713 0.6936416 0.7778092 0.8128002 0.8931850 0.9735698</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Adult 3&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Adult 3&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-30-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-30-1">
+Past versions of unnamed-chunk-30-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-30-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-30-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-31-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-31-1">
+Past versions of unnamed-chunk-31-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-31-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-31-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(a3[mito,])/libsize
+propribo &lt;- colSums(a3[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Adult 3: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Adult 3: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-32-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-32-1">
+Past versions of unnamed-chunk-32-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-32-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-32-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="disease-1" class="section level2">
+<h2>Disease 1</h2>
+<pre class="r"><code># Disease 1
+par(mfrow=c(1,2))
+libsize &lt;- colSums(d1)
+pz &lt;- colMeans(d1==0)
+numgene &lt;- colSums(d1!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   741.9607  1973.8215  8133.1256  9892.9268 11652.7280 12708.6087
+ [7] 13940.4695 15524.2905 16228.2110 17284.0917 19043.8929 20275.7537
+[13] 21507.6145 22387.5151 24499.2765 25907.1175 27490.9385 28546.8192
+[19] 29954.6602 31890.4415 32946.3222 34354.1631 35234.0637 38225.7257
+[25] 39281.6064 41041.4076 42273.2684 43681.1094 45088.9503 46848.7515
+[31] 48960.5129 50192.3737 51776.1948 53008.0556 55295.7971 56703.6381
+[37] 58463.4392 58991.3796 60751.1808 64270.7831 66558.5246 67438.4252
+[43] 70430.0872 75533.5106 77997.2323 80988.8943 82924.6756 88732.0194</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  512.4921 1325.6812 4563.6522 5228.9887 5790.8284 6160.4598 6751.8700
+[8] 7121.5014</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.7901676 0.8010587 0.8184843 0.8293754 0.8459298 0.8655337 0.9609393
+[8] 0.9848996</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Disease 1&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Disease 1&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-33-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-33-1">
+Past versions of unnamed-chunk-33-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-33-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-33-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-34-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-34-1">
+Past versions of unnamed-chunk-34-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-34-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-34-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(d1[mito,])/libsize
+propribo &lt;- colSums(d1[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Disease 1: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Disease 1: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-35-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-35-1">
+Past versions of unnamed-chunk-35-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-35-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-35-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="disease-2" class="section level2">
+<h2>Disease 2</h2>
+<pre class="r"><code># Disease 2
+par(mfrow=c(1,2))
+libsize &lt;- colSums(d2)
+pz &lt;- colMeans(d2==0)
+numgene &lt;- colSums(d2!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   1098.901   3315.519  17881.866  20098.484  21681.783  24215.060
+ [7]  25798.359  27381.658  28964.956  32131.553  35298.150  37198.109
+[13]  39414.727  41314.685  42897.984  46064.581  50181.157  51447.796
+[19]  53031.094  56831.011  59047.629  63797.525  65064.164  66647.462
+[25]  68864.080  69814.059  72980.656  76147.254  79313.851  80897.149
+[31]  82797.108  84697.066  86913.684  88813.642  91980.239  93563.538
+[37]  97680.114  99896.732 101796.690 103063.329 106229.926 108129.885
+[43] 110663.162 113196.440 115729.718 118896.315 121429.593 125229.509
+[49] 126496.148 127129.468 128396.106 129662.745 132196.023 140429.176
+[55] 146129.050 155312.182 159745.418</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]   535.0048  2029.4649  6149.9047  6854.4359  8391.5948 10377.0918</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.6942429 0.7527448 0.7980366 0.8187953 0.9402026 0.9842363</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Disease 2&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Disease 2&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-36-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-36-1">
+Past versions of unnamed-chunk-36-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-36-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-36-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-37-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-37-1">
+Past versions of unnamed-chunk-37-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-37-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-37-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(d2[mito,])/libsize
+propribo &lt;- colSums(d2[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Disease 2: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Disease 2: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-38-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-38-1">
+Past versions of unnamed-chunk-38-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-38-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-38-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="disease-3" class="section level2">
+<h2>Disease 3</h2>
+<pre class="r"><code># Disease 3
+par(mfrow=c(1,2))
+libsize &lt;- colSums(d3)
+pz &lt;- colMeans(d3==0)
+numgene &lt;- colSums(d3!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code>[1]   4073.714  15918.699  73959.127  87936.209  94332.501 110204.781</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1] 2348.607 4571.828</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.8652928 0.9307992</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Disease 3&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Disease 3&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-39-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-39-1">
+Past versions of unnamed-chunk-39-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-39-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-39-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-40-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-40-1">
+Past versions of unnamed-chunk-40-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-40-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-40-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(d3[mito,])/libsize
+propribo &lt;- colSums(d3[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Disease 3: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Disease 3: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-41-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-41-1">
+Past versions of unnamed-chunk-41-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-41-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-41-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="disease-4" class="section level2">
+<h2>Disease 4</h2>
+<pre class="r"><code># Disease 4
+par(mfrow=c(1,2))
+libsize &lt;- colSums(d4)
+pz &lt;- colMeans(d4==0)
+numgene &lt;- colSums(d4!=0)
+
+find_modes(libsize)</code></pre>
+<pre><code> [1]   5500.593  19798.398  23264.533  28030.468  30196.802  32796.403
+ [7]  36262.538  40595.207  49693.810  53593.212  56626.079  60958.748
+[13]  63991.616  69190.818  75256.553  81755.556  90420.893  96919.895
+[19] 100386.030 108618.100 119016.504 125082.240 134614.110 137213.711
+[25] 138513.511 140246.579 143279.447 153244.584 160610.120 161476.654
+[31] 162343.187 164076.255 165809.322 167542.389 169275.457 173174.858
+[37] 174907.926 178374.060 179240.594 182273.462 187039.397 188772.464
+[43] 190505.532 192238.599 193971.666 195271.467 197004.534 198737.602
+[49] 199604.135 200470.669 201337.203 202203.736 203936.804 205669.871
+[55] 206536.405 207402.938 208269.472 210869.073 218234.609</code></pre>
+<pre class="r"><code>find_modes(numgene)</code></pre>
+<pre><code>[1]  2249.813  4643.692  5338.689  9972.003 11413.478 12262.919</code></pre>
+<pre class="r"><code>find_modes(pz)</code></pre>
+<pre><code>[1] 0.6386777 0.6637061 0.7061787 0.8426975 0.8631754 0.9337101</code></pre>
+<pre class="r"><code>smoothScatter(libsize,pz,xlab=&quot;Library size&quot;,ylab=&quot;Proportion zeroes per cell&quot;,main=&quot;Disease 4&quot;)
+smoothScatter(libsize,numgene,xlab=&quot;Library size&quot;,ylab=&quot;Detected genes&quot;,main=&quot;Disease 4&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-42-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-42-1">
+Past versions of unnamed-chunk-42-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-42-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-42-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,3))
+plot(density(libsize),main=&quot;Distribution of library sizes&quot;)
+#abline(v=3000,col=2)
+plot(density(pz), main=&quot;Distribution of proportion of zeroes per cell&quot;)
+#abline(v=0.95,col=2)
+plot(density(numgene), main=&quot;Distribution of detected genes per cell&quot;)
+abline(v=500,col=4, lty=3)
+legend(&quot;topright&quot;,lty=2,col=4,legend=&quot;500 genes&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-43-1.png" width="960" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-43-1">
+Past versions of unnamed-chunk-43-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-43-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-43-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>mycol &lt;- rep(1,length(libsize))
+mycol[pz&gt;0.95] &lt;- 2
+
+par(mfrow=c(1,2))
+propmito &lt;- colSums(d4[mito,])/libsize
+propribo &lt;- colSums(d4[ribo,])/libsize
+plot(libsize,propribo,xlab=&quot;Library size&quot;,ylab=&quot;Proportion ribosomal counts&quot;,main=&quot;Disease 4: Ribosomal content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))
+plot(libsize,propmito,xlab=&quot;Library size&quot;,ylab=&quot;Proportion mitochondrial counts&quot;,main=&quot;Disease 4: Mitochondrial content&quot;,col=mycol)
+legend(&quot;topright&quot;,fill=c(1,2),legend=c(&quot;pz &lt;= 0.95&quot;,&quot;pz &gt; 0.95&quot;))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-44-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-44-1">
+Past versions of unnamed-chunk-44-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-44-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-44-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="comparing-between-samples" class="section level1">
+<h1>Comparing between samples</h1>
+<p>Here I am looking at the library sizes, number of detected genes, first modes of both library size distributions and number of detected genes per cell, as well as numbers of cells for each sample. This will help highlight if any of the samples look vastly different to the others in the dataset.</p>
+<div id="calculating-statistics" class="section level2">
+<h2>Calculating statistics</h2>
+<pre class="r"><code>libmode &lt;- rep(NA,13)
+numgmode &lt;- rep(NA,13)
+numcells &lt;- rep(NA,13)
+names(libmode) &lt;- names(numgmode) &lt;- names(numcells) &lt;- c(&quot;Fetal_1&quot;,&quot;Fetal_2&quot;,&quot;Fetal_3&quot;,
+                                       &quot;Young_1&quot;,&quot;Young_2&quot;,&quot;Young_3&quot;,
+                                       &quot;Adult_1&quot;,&quot;Adult_2&quot;,&quot;Adult_3&quot;,
+                                       &quot;Diseased_1&quot;,&quot;Diseased_2&quot;,
+                                       &quot;Diseased_3&quot;,&quot;Diseased_4&quot;)
+
+mylibs &lt;- mynumg &lt;- vector(&quot;list&quot;, 13) 
+
+mylibs[[1]] &lt;- colSums(f1)
+mynumg[[1]] &lt;- colSums(f1!=0)
+numcells[1] &lt;- ncol(f1)
+
+libmode[1] &lt;- find_modes(mylibs[[1]])[1]
+numgmode[1] &lt;- find_modes(mynumg[[1]])[1]
+
+mylibs[[2]] &lt;- colSums(f2)
+mynumg[[2]] &lt;- colSums(f2!=0)
+numcells[2] &lt;- ncol(f2)
+
+libmode[2] &lt;- find_modes(mylibs[[2]])[1]
+numgmode[2] &lt;- find_modes(mynumg[[2]])[1]
+
+mylibs[[3]] &lt;- colSums(f3)
+mynumg[[3]] &lt;- colSums(f3!=0)
+libmode[3] &lt;- find_modes(mylibs[[3]])[1]
+numgmode[3] &lt;- find_modes(mynumg[[3]])[1]
+numcells[3] &lt;- ncol(f3)
+
+mylibs[[4]] &lt;- colSums(y1)
+mynumg[[4]] &lt;- colSums(y1!=0)
+libmode[4] &lt;- find_modes(mylibs[[4]])[1]
+numgmode[4] &lt;- find_modes(mynumg[[4]])[1]
+numcells[4] &lt;- ncol(y1)
+
+mylibs[[5]] &lt;- colSums(y2)
+mynumg[[5]] &lt;- colSums(y2!=0)
+libmode[5] &lt;- find_modes(mylibs[[5]])[1]
+numgmode[5] &lt;- find_modes(mynumg[[5]])[1]
+numcells[5] &lt;- ncol(y2)
+
+mylibs[[6]] &lt;- colSums(y3)
+mynumg[[6]] &lt;- colSums(y3!=0)
+libmode[6] &lt;- find_modes(mylibs[[6]])[1]
+numgmode[6] &lt;- find_modes(mynumg[[6]])[1]
+numcells[6] &lt;- ncol(y3)
+
+mylibs[[7]] &lt;- colSums(a1)
+mynumg[[7]] &lt;- colSums(a1!=0)
+libmode[7] &lt;- find_modes(mylibs[[7]])[1]
+numgmode[7] &lt;- find_modes(mynumg[[7]])[1]
+numcells[7] &lt;- ncol(a1)
+
+mylibs[[8]] &lt;- colSums(a2)
+mynumg[[8]] &lt;- colSums(a2!=0)
+libmode[8] &lt;- find_modes(mylibs[[8]])[1]
+numgmode[8] &lt;- find_modes(mynumg[[8]])[1]
+numcells[8] &lt;- ncol(a2)
+
+mylibs[[9]] &lt;- colSums(a3)
+mynumg[[9]] &lt;- colSums(a3!=0)
+libmode[9] &lt;- find_modes(mylibs[[9]])[1]
+numgmode[9] &lt;- find_modes(mynumg[[9]])[1]
+numcells[9] &lt;- ncol(a3)
+
+mylibs[[10]] &lt;- colSums(d1)
+mynumg[[10]] &lt;- colSums(d1!=0)
+libmode[10] &lt;- find_modes(mylibs[[10]])[1]
+numgmode[10] &lt;- find_modes(mynumg[[10]])[1]
+numcells[10] &lt;- ncol(d1)
+
+mylibs[[11]] &lt;- colSums(d2)
+mynumg[[11]] &lt;- colSums(d2!=0)
+libmode[11] &lt;- find_modes(mylibs[[11]])[1]
+numgmode[11] &lt;- find_modes(mynumg[[11]])[1]
+numcells[11] &lt;- ncol(d2)
+
+mylibs[[12]] &lt;- colSums(d3)
+mynumg[[12]] &lt;- colSums(d3!=0)
+libmode[12] &lt;- find_modes(mylibs[[12]])[1]
+numgmode[12] &lt;- find_modes(mynumg[[12]])[1]
+numcells[12] &lt;- ncol(d3)
+
+mylibs[[13]] &lt;- colSums(d4)
+mynumg[[13]] &lt;- colSums(d4!=0)
+libmode[13] &lt;- find_modes(mylibs[[13]])[1]
+numgmode[13] &lt;- find_modes(mynumg[[13]])[1]
+numcells[13] &lt;- ncol(d4)</code></pre>
+</div>
+<div id="number-of-cells-per-sample" class="section level2">
+<h2>Number of cells per sample</h2>
+<pre class="r"><code>par(mar=c(6,4,2,2))
+mycols &lt;- rep(ggplotColors(4),c(3,3,3,4))
+barplot(numcells,col=mycols,las=2,main=&quot;Number of cells per sample&quot;)
+abline(h=1000,lty=2,lwd=2)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-46-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-46-1">
+Past versions of unnamed-chunk-46-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-46-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/figure/01-QualityControl.Rmd/unnamed-chunk-46-1.png" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-46-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="library-size-distributions-sequencing-depth" class="section level2">
+<h2>Library size distributions (sequencing depth)</h2>
+<pre class="r"><code>plot(density(mylibs[[1]]),lwd=2,col=mycols[1],ylim=c(0,0.0003),main=&quot;Library size distributions&quot;)
+for(i in 2:13) lines(density(mylibs[[i]]),lwd=2,col=mycols[i])
+legend(&quot;topright&quot;,legend=c(&quot;Fetal&quot;,&quot;Young&quot;,&quot;Adult&quot;,&quot;Diseased&quot;),fill=ggplotColors(4))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-47-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-47-1">
+Past versions of unnamed-chunk-47-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-47-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/figure/01-QualityControl.Rmd/unnamed-chunk-47-1.png" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-47-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>#abline(v=1000,lty=2,lwd=2)</code></pre>
+<pre class="r"><code>par(mfrow=c(1,1))
+par(mar=c(6,4,2,2))
+boxplot(mylibs,col=mycols,names=names(libmode),las=2, main=&quot;Library size distributions&quot;,ylim=c(0,150000))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-48-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-48-1">
+Past versions of unnamed-chunk-48-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-48-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/2b103a6a7efba526862397df576470e9f8a359b5/public/figure/01-QualityControl.Rmd/unnamed-chunk-48-1.png" target="_blank">2b103a6</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-06
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>boxplot(mylibs,col=ggplotColors(2)[factor(targets$Batch)],names=names(libmode),las=2, main=&quot;Library size distributions by batch&quot;,ylim=c(0,150000))
+legend(&quot;topleft&quot;,fill=ggplotColors(2),legend=levels(factor(targets$Batch)))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-48-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="number-of-genes-detected" class="section level2">
+<h2>Number of genes detected</h2>
+<pre class="r"><code>plot(density(mynumg[[1]]),lwd=2,col=mycols[1],ylim=c(0,0.0007),main=&quot;Number of genes detected distributions&quot;)
+for(i in 2:13) lines(density(mynumg[[i]]),lwd=2,col=mycols[i])
+legend(&quot;topright&quot;,legend=c(&quot;Fetal&quot;,&quot;Young&quot;,&quot;Adult&quot;,&quot;Diseased&quot;),fill=ggplotColors(4))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-49-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-49-1">
+Past versions of unnamed-chunk-49-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-49-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/figure/01-QualityControl.Rmd/unnamed-chunk-49-1.png" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>par(mfrow=c(1,1))
+par(mar=c(6,4,2,2))
+boxplot(mynumg,col=mycols,names=names(libmode),las=2, main=&quot;Number of genes detected&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-50-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-50-1">
+Past versions of unnamed-chunk-50-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-50-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/figure/01-QualityControl.Rmd/unnamed-chunk-50-1.png" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre class="r"><code>boxplot(mynumg,col=ggplotColors(2)[factor(targets$Batch)],names=names(libmode),las=2, main=&quot;Number of genes detected by batch&quot;)
+legend(&quot;topleft&quot;,fill=ggplotColors(2),legend=levels(factor(targets$Batch)))</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-50-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-50-2">
+Past versions of unnamed-chunk-50-2.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-50-2" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/58394972f9fb9d4ac00afc611ae58d3675e47de5/public/figure/01-QualityControl.Rmd/unnamed-chunk-50-2.png" target="_blank">5839497</a>
+</td>
+<td>
+Belinda Phipson
+</td>
+<td>
+2019-06-07
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="examining-the-first-modes-from-density-ditributions" class="section level2">
+<h2>Examining the first modes from density ditributions</h2>
+<pre class="r"><code>barplot(libmode,col=mycols,las=2)
+title(&quot;First mode: library size distributions&quot;)
+abline(h=1000,lty=2,lwd=2)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-51-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>barplot(numgmode,col=mycols,las=2)
+title(&quot;First mode: number of genes detected distributions&quot;)
+abline(h=500,lty=2,lwd=2)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-51-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="mds-plot-of-all-samples" class="section level2">
+<h2>MDS plot of all samples</h2>
+<p>To get a high-level idea of the overall sources of variability in the dataset, I have summed the counts over all cells within a sample to obtain a “pseudobulk” sample and made MDS plots using functions in edgeR.</p>
+<pre class="r"><code>pseudobulk &lt;- matrix(NA,ncol=13,nrow=nrow(f1))
+colnames(pseudobulk) &lt;- group
+rownames(pseudobulk) &lt;- rownames(f1)
+
+pseudobulk[,1] &lt;- rowSums(f1)
+pseudobulk[,2] &lt;- rowSums(f2)
+pseudobulk[,3] &lt;- rowSums(f3)
+pseudobulk[,4] &lt;- rowSums(y1)
+pseudobulk[,5] &lt;- rowSums(y2)
+pseudobulk[,6] &lt;- rowSums(y3)
+pseudobulk[,7] &lt;- rowSums(a1)
+pseudobulk[,8] &lt;- rowSums(a2)
+pseudobulk[,9] &lt;- rowSums(a3)
+pseudobulk[,10] &lt;- rowSums(d1)
+pseudobulk[,11] &lt;- rowSums(d2)
+pseudobulk[,12] &lt;- rowSums(d3)
+pseudobulk[,13] &lt;- rowSums(d4)</code></pre>
+<pre class="r"><code>y &lt;- DGEList(pseudobulk)
+keep &lt;- rowSums(y$counts)&gt;10
+y.keep &lt;- y[keep,]</code></pre>
+<pre class="r"><code>#pdf(file=&quot;/group/bioi1/belinda/SingleCell/Cardiac/MDSplots.pdf&quot;,
+#    width = 12,height = 5)
+par(mfrow=c(1,2))
+par(mar=c(4,4,2,2))
+plotMDS(y.keep,col=ggplotColors(4)[factor(targets$Group)])
+legend(&quot;bottom&quot;,fill=ggplotColors(4),legend=levels(factor(targets$Group)),bty=&quot;n&quot;)
+
+plotMDS(y.keep,dim=c(3,4),col=ggplotColors(2)[factor(targets$Sex)])
+legend(&quot;bottomright&quot;,fill=ggplotColors(2),legend=levels(factor(targets$Sex)),bty=&quot;n&quot;)</code></pre>
+<p><img src="figure/01-QualityControl.Rmd/unnamed-chunk-54-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#dev.off()</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.6.0 (2019-04-26)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS release 6.7 (Final)
+
+Matrix products: default
+BLAS:   /usr/local/installed/R/3.6.0/lib64/R/lib/libRblas.so
+LAPACK: /usr/local/installed/R/3.6.0/lib64/R/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] splines   parallel  stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] workflowr_1.3.0             NMF_0.21.0                 
+ [3] bigmemory_4.5.33            cluster_2.0.9              
+ [5] rngtools_1.3.1.1            pkgmaker_0.27              
+ [7] registry_0.5-1              scran_1.12.0               
+ [9] SingleCellExperiment_1.6.0  SummarizedExperiment_1.14.0
+[11] GenomicRanges_1.36.0        GenomeInfoDb_1.20.0        
+[13] DelayedArray_0.10.0         BiocParallel_1.18.0        
+[15] matrixStats_0.54.0          cowplot_0.9.4              
+[17] monocle_2.12.0              DDRTree_0.1.5              
+[19] irlba_2.3.3                 VGAM_1.1-1                 
+[21] ggplot2_3.1.1               Matrix_1.2-17              
+[23] Seurat_3.0.1                org.Hs.eg.db_3.8.2         
+[25] AnnotationDbi_1.46.0        IRanges_2.18.0             
+[27] S4Vectors_0.22.0            Biobase_2.44.0             
+[29] BiocGenerics_0.30.0         RColorBrewer_1.1-2         
+[31] edgeR_3.26.3                limma_3.40.2               
+
+loaded via a namespace (and not attached):
+  [1] backports_1.1.4          plyr_1.8.4              
+  [3] igraph_1.2.4.1           lazyeval_0.2.2          
+  [5] densityClust_0.3         listenv_0.7.0           
+  [7] gridBase_0.4-7           scater_1.12.2           
+  [9] fastICA_1.2-1            digest_0.6.18           
+ [11] foreach_1.4.4            htmltools_0.3.6         
+ [13] viridis_0.5.1            gdata_2.18.0            
+ [15] magrittr_1.5             memoise_1.1.0           
+ [17] doParallel_1.0.14        ROCR_1.0-7              
+ [19] globals_0.12.4           R.utils_2.8.0           
+ [21] docopt_0.6.1             colorspace_1.4-1        
+ [23] blob_1.1.1               ggrepel_0.8.1           
+ [25] xfun_0.6                 dplyr_0.8.1             
+ [27] bigmemory.sri_0.1.3      sparsesvd_0.1-4         
+ [29] crayon_1.3.4             RCurl_1.95-4.12         
+ [31] jsonlite_1.6             iterators_1.0.10        
+ [33] survival_2.44-1.1        zoo_1.8-5               
+ [35] ape_5.3                  glue_1.3.1              
+ [37] gtable_0.3.0             zlibbioc_1.30.0         
+ [39] XVector_0.24.0           BiocSingular_1.0.0      
+ [41] future.apply_1.2.0       scales_1.0.0            
+ [43] pheatmap_1.0.12          DBI_1.0.0               
+ [45] bibtex_0.4.2             Rcpp_1.0.1              
+ [47] metap_1.1                xtable_1.8-4            
+ [49] viridisLite_0.3.0        dqrng_0.2.1             
+ [51] reticulate_1.12          bit_1.1-14              
+ [53] rsvd_1.0.0               SDMTools_1.1-221.1      
+ [55] tsne_0.1-3               htmlwidgets_1.3         
+ [57] httr_1.4.0               FNN_1.1.3               
+ [59] gplots_3.0.1.1           ica_1.0-2               
+ [61] pkgconfig_2.0.2          R.methodsS3_1.7.1       
+ [63] dynamicTreeCut_1.63-1    locfit_1.5-9.1          
+ [65] tidyselect_0.2.5         rlang_0.3.4             
+ [67] reshape2_1.4.3           munsell_0.5.0           
+ [69] tools_3.6.0              RSQLite_2.1.1           
+ [71] ggridges_0.5.1           evaluate_0.13           
+ [73] stringr_1.4.0            yaml_2.2.0              
+ [75] npsurv_0.4-0             knitr_1.22              
+ [77] bit64_0.9-7              fs_1.3.1                
+ [79] fitdistrplus_1.0-14      caTools_1.17.1.2        
+ [81] purrr_0.3.2              RANN_2.6.1              
+ [83] pbapply_1.4-0            future_1.12.0           
+ [85] nlme_3.1-139             whisker_0.3-2           
+ [87] slam_0.1-45              R.oo_1.22.0             
+ [89] compiler_3.6.0           beeswarm_0.2.3          
+ [91] plotly_4.9.0             png_0.1-7               
+ [93] lsei_1.2-0               statmod_1.4.30          
+ [95] tibble_2.1.1             stringi_1.4.3           
+ [97] lattice_0.20-38          HSMMSingleCell_1.4.0    
+ [99] pillar_1.3.1             combinat_0.0-8          
+[101] Rdpack_0.11-0            lmtest_0.9-37           
+[103] BiocNeighbors_1.2.0      data.table_1.11.6       
+[105] bitops_1.0-6             gbRd_0.4-11             
+[107] R6_2.4.0                 KernSmooth_2.23-15      
+[109] gridExtra_2.3            vipor_0.4.5             
+[111] codetools_0.2-16         MASS_7.3-51.4           
+[113] gtools_3.8.1             assertthat_0.2.1        
+[115] rprojroot_1.3-2          withr_2.1.2             
+[117] qlcMatrix_0.9.7          sctransform_0.2.0       
+[119] GenomeInfoDbData_1.2.1   grid_3.6.0              
+[121] tidyr_0.8.3              DelayedMatrixStats_1.6.0
+[123] rmarkdown_1.12.6         Rtsne_0.15              
+[125] git2r_0.25.2             ggbeeswarm_0.6.0        </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

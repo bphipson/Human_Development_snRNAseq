@@ -1,0 +1,1386 @@
+---
+title: "Differential expression analysis of broad cell type clusters"
+author: "Belinda Phipson"
+date: "10/25/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Introduction
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+```
+
+```{r}
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+# Load the data
+
+```{r readTargets}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r readData}
+fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
+load(file="./output/RDataObjects/fetalObjs.Rdata")
+
+young.integrated <- readRDS(file="./output/RDataObjects/young-int.Rds")
+load(file="./output/RDataObjects/youngObjs.Rdata")
+
+adult.integrated <- readRDS(file="./output/RDataObjects/adult-int.Rds")
+load(file="./output/RDataObjects/adultObjs.Rdata")
+```
+
+```{r}
+# Load unfiltered counts matrix for every sample (object all)
+load("./output/RDataObjects/all-counts.Rdata")
+```
+
+# Set default clustering resolution
+
+```{r}
+# Default 0.3
+Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
+DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.3
+DimPlot(young.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.6
+DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+```
+
+
+# Merge all data together
+
+```{r}
+heart <- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = "heart")
+table(heart$orig.ident)
+table(heart$biorep)
+table(heart$Broad_celltype,heart$biorep)
+```
+
+# Remove erythroid cells
+
+```{r}
+heart <- subset(heart,subset = Broad_celltype != "Erythroid")
+heart$biorep <- factor(heart$biorep,levels=c("f1","f2","f3","y1","y2","y3","a1","a2","a3"))
+table(heart$Broad_celltype,heart$biorep)
+```
+
+
+# Get gene annotation
+
+```{r}
+columns(org.Hs.eg.db)
+ann <- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(all),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(all),ann$SYMBOL)
+ann <- ann[m,]
+table(ann$SYMBOL==rownames(all))
+```
+
+```{r}
+mito <- grep("mitochondrial",ann$GENENAME)
+length(mito)
+ribo <- grep("ribosomal",ann$GENENAME)
+length(ribo)
+missingEZID <- which(is.na(ann$ENTREZID))
+length(missingEZID)
+```
+
+# Filter out non-informative genes
+
+```{r markers}
+m <- match(colnames(heart),colnames(all))
+all.counts <- all[,m]
+```
+
+```{r}
+chuck <- unique(c(mito,ribo,missingEZID))
+length(chuck)
+all.counts.keep <- all.counts[-chuck,]
+ann.keep <- ann[-chuck,]
+table(ann.keep$SYMBOL==rownames(all.counts.keep))
+```
+
+```{r}
+# remove x y genes
+
+xy <- ann.keep$CHR %in% c("X","Y")
+all.counts.keep <- all.counts.keep[!xy,]
+ann.keep <- ann.keep[!xy,]
+```
+
+
+
+```{r}
+numzero.genes <- rowSums(all.counts.keep==0)
+
+table(numzero.genes > (ncol(all.counts.keep)-20))
+
+keep.genes <- numzero.genes < (ncol(all.counts.keep)-20)
+table(keep.genes)
+
+all.keep <- all.counts.keep[keep.genes,]
+dim(all.keep)
+
+ann.keep <- ann.keep[keep.genes,]
+
+table(colnames(heart)==colnames(all.keep))
+
+table(rownames(all.keep)==ann.keep$SYMBOL)
+```
+
+# Create pseudobulk samples
+
+```{r}
+broadct <- factor(heart$Broad_celltype)
+sam <- factor(heart$biorep,levels=c("f1","f2","f3","y1","y2","y3","a1","a2","a3"))
+newgrp <- paste(broadct,sam,sep=".")
+newgrp <- factor(newgrp,levels=paste(rep(levels(broadct),each=9),levels(sam),sep="."))
+table(newgrp)
+```
+
+
+```{r pb}
+des <- model.matrix(~0+newgrp)
+colnames(des) <- levels(newgrp)
+
+dim(des)
+
+pb <- all.keep %*% des
+```
+
+```{r dgelist}
+y.pb <- DGEList(pb)
+saminfo <- matrix(unlist(strsplit(colnames(y.pb$counts),split="[.]")),ncol=2,byrow=TRUE)
+bct <- factor(saminfo[,1])
+indiv <- factor(saminfo[,2])
+group <- rep(NA,ncol(y.pb))
+group[grep("f",indiv)] <- "fetal"
+group[grep("y",indiv)] <- "young"
+group[grep("a",indiv)] <- "adult"
+group <- factor(group,levels=c("fetal","young","adult"))
+targets.pb <- data.frame(bct,indiv,group)
+targets.pb$Sex <- targets$Sex[1:9]
+```
+
+```{r plotmds,fig.width=7,fig.height=7}
+par(mfrow=c(1,1))
+sexgroup <- paste(group,targets.pb$Sex,sep=".")
+plotMDS.DGEList(y.pb,gene.selection="common",col=ggplotColors(7)[bct],pch=c(0,15,1,16,2,17)[factor(sexgroup)],cex=2)
+legend("bottomright",legend=levels(bct),fill=ggplotColors(7),bty="n")
+legend("bottomleft",legend=c("Female","Male"),pch=c(1,16),cex=1.5)
+legend("topright",legend=c("Fetal","Young","Adult"),pch=c(1,2,0),cex=1.5)
+
+plotMDS.DGEList(y.pb,gene.selection="common",col=ggplotColors(7)[bct],pch=c(0,15,1,16,2,17)[factor(sexgroup)],cex=2,dim=c(3,4))
+legend("bottomright",legend=levels(bct),fill=ggplotColors(7),bty="n")
+legend("top",legend=c("Female","Male"),pch=c(1,16),cex=1.5)
+legend("topright",legend=c("Fetal","Young","Adult"),pch=c(1,2,0),cex=1.5)
+
+plotMDS.DGEList(y.pb,gene.selection="common",col=ggplotColors(7)[bct],pch=c(0,15,1,16,2,17)[factor(sexgroup)],cex=2,dim=c(5,6))
+legend("bottomleft",legend=levels(bct),fill=ggplotColors(7),bty="n")
+legend("top",legend=c("Female","Male"),pch=c(1,16),cex=1.5)
+legend("bottomright",legend=c("Fetal","Young","Adult"),pch=c(1,2,0),cex=1.5)
+```
+
+
+# Differential expression analysis
+
+```{r}
+table(rownames(y.pb)==ann.keep$SYMBOL)
+y.pb$genes <- ann.keep
+
+#logcounts <- normCounts(y.pb,log=TRUE,prior.count=0.5)
+bct2 <- as.character(bct)
+bct2[bct2 == "Cardiomyocytes"] <- "cardio"
+bct2[bct2 == "Endothelial cells"] <- "endo"
+bct2[bct2 == "Epicardial cells"] <- "epicardial"
+bct2[bct2 == "Fibroblast"] <- "fibro"
+bct2[bct2 == "Immune cells"] <- "immune"
+bct2[bct2 == "Neurons"] <- "neurons"
+bct2[bct2 == "Smooth muscle cells"] <- "smc"
+
+newgrp <- paste(bct2,group,targets.pb$Sex,sep=".")
+newgrp <- factor(newgrp)
+
+design <- model.matrix(~0+newgrp)
+colnames(design) <- levels(newgrp)
+
+v <- voom(y.pb,design,plot=TRUE,normalize.method = "cyclicloess")
+
+fit <- lmFit(v,design)
+
+#fit <- lmFit(logcounts,design)
+```
+
+## Cardiomyocytes
+
+```{r}
+cont.cardio <- makeContrasts(YvF = 0.5*(cardio.young.Male + cardio.young.Female) - 0.5*(cardio.fetal.Male + cardio.fetal.Female),
+                         AvF = 0.5*(cardio.adult.Male + cardio.adult.Female) - 0.5*(cardio.fetal.Male + cardio.fetal.Female),
+                         AvY = 0.5*(cardio.adult.Male + cardio.adult.Female) - 0.5*(cardio.young.Male + cardio.young.Female),
+                         SexFetal = cardio.fetal.Male - cardio.fetal.Female,
+                         SexYoung = cardio.young.Male - cardio.young.Female,
+                         SexAdult = cardio.adult.Male - cardio.adult.Female,
+                         InteractionAF = (cardio.adult.Male - cardio.fetal.Male) - (cardio.adult.Female - cardio.fetal.Female),
+                         InteractionYF = (cardio.young.Male - cardio.fetal.Male) - (cardio.young.Female - cardio.fetal.Female),
+                         InteractionAY = (cardio.adult.Male - cardio.young.Male) - (cardio.adult.Female - cardio.young.Female),
+                         levels=design)
+fit.cardio <- contrasts.fit(fit,contrasts = cont.cardio)
+fit.cardio <- eBayes(fit.cardio,robust=TRUE)
+
+summary(decideTests(fit.cardio))
+
+treat.cardio <- treat(fit.cardio,lfc=0.5)
+
+dt.cardio<-decideTests(treat.cardio)
+
+summary(dt.cardio)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.cardio,coef=i,status=dt.cardio[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.cardio)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2,xlab="")
+title("Cardiomyocytes")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.cardio,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.cardio,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.cardio,coef=3,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.cardio,coef=4,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.cardio,coef=5,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.cardio,coef=6,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.cardio,coef=7,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.cardio,coef=8,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.cardio,coef=9,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.cardio$coefficients[,1],treat.cardio$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="Cardiomyocytes: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.cardio[,1] !=0 | dt.cardio[,2] != 0
+text(treat.cardio$coefficients[sig.genes,1],treat.cardio$coefficients[sig.genes,2],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,4],treat.cardio$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="Cardiomyocytes: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.cardio[,4] !=0 | dt.cardio[,5] != 0
+text(treat.cardio$coefficients[sig.genes,4],treat.cardio$coefficients[sig.genes,5],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,4],treat.cardio$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="Cardiomyocytes: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.cardio[,4] !=0 | dt.cardio[,6] != 0
+text(treat.cardio$coefficients[sig.genes,4],treat.cardio$coefficients[sig.genes,6],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,5],treat.cardio$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="Cardiomyocytes: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.cardio[,5] !=0 | dt.cardio[,6] != 0
+text(treat.cardio$coefficients[sig.genes,5],treat.cardio$coefficients[sig.genes,6],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,4],treat.cardio$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="Cardiomyocytes: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.cardio[,8] !=0 
+text(treat.cardio$coefficients[sig.genes,4],treat.cardio$coefficients[sig.genes,5],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,4],treat.cardio$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="Cardiomyocytes: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.cardio[,7] !=0 
+text(treat.cardio$coefficients[sig.genes,4],treat.cardio$coefficients[sig.genes,6],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.cardio$coefficients[,5],treat.cardio$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="Cardiomyocytes: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.cardio[,9] !=0 
+text(treat.cardio$coefficients[sig.genes,5],treat.cardio$coefficients[sig.genes,6],labels=rownames(dt.cardio)[sig.genes],col=2,cex=0.6)
+```
+
+## Epicardial cells
+
+```{r}
+cont.epi <- makeContrasts(YvF = 0.5*(epicardial.young.Male + epicardial.young.Female) - 0.5*(epicardial.fetal.Male + epicardial.fetal.Female),
+                         AvF = 0.5*(epicardial.adult.Male + epicardial.adult.Female) - 0.5*(epicardial.fetal.Male + epicardial.fetal.Female),
+                         AvY = 0.5*(epicardial.adult.Male + epicardial.adult.Female) - 0.5*(epicardial.young.Male + epicardial.young.Female),
+                         SexFetal = epicardial.fetal.Male - epicardial.fetal.Female,
+                         SexYoung = epicardial.young.Male - epicardial.young.Female,
+                         SexAdult = epicardial.adult.Male - epicardial.adult.Female,
+                         InteractionAF = (epicardial.adult.Male - epicardial.fetal.Male) - (epicardial.adult.Female - epicardial.fetal.Female),
+                         InteractionYF = (epicardial.young.Male - epicardial.fetal.Male) - (epicardial.young.Female - epicardial.fetal.Female),
+                         InteractionAY = (epicardial.adult.Male - epicardial.young.Male) - (epicardial.adult.Female - epicardial.young.Female),
+                         levels=design)
+fit.epicardial <- contrasts.fit(fit,contrasts = cont.epi)
+fit.epicardial <- eBayes(fit.epicardial,robust=TRUE)
+
+summary(decideTests(fit.epicardial))
+
+treat.epicardial <- treat(fit.epicardial,lfc=0.5)
+
+dt.epicardial<-decideTests(treat.epicardial)
+
+summary(dt.epicardial)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.epicardial,coef=i,status=dt.epicardial[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.epicardial)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("Epicardial cells")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.epicardial,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.epicardial,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.epicardial,coef=3)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.epicardial,coef=4)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.epicardial,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.epicardial,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.epicardial,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.epicardial,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.epicardial,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.epicardial$coefficients[,1],treat.epicardial$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="Epicardial: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.epicardial[,1] !=0 | dt.epicardial[,2] != 0
+text(treat.epicardial$coefficients[sig.genes,1],treat.epicardial$coefficients[sig.genes,2],labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,4],treat.epicardial$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="epicardial: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.epicardial[,4] !=0 | dt.epicardial[,5] != 0
+text(treat.epicardial$coefficients[sig.genes,4],treat.epicardial$coefficients[sig.genes,5],labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,4],treat.epicardial$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="epicardial: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.epicardial[,4] !=0 | dt.epicardial[,6] != 0
+text(treat.epicardial$coefficients[sig.genes,4],treat.epicardial$coefficients[sig.genes,6],labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,5],treat.epicardial$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="epicardial: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.epicardial[,5] !=0 | dt.epicardial[,6] != 0
+text(treat.epicardial$coefficients[sig.genes,5],treat.epicardial$coefficients[sig.genes,6],labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,4],treat.epicardial$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="epicardial: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.epicardial[,8] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.epicardial$coefficients[sig.genes,4],treat.epicardial$coefficients[sig.genes,5],
+       labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,4],treat.epicardial$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="epicardial: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.epicardial[,7] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.epicardial$coefficients[sig.genes,4],treat.epicardial$coefficients[sig.genes,6],
+       labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.epicardial$coefficients[,5],treat.epicardial$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="epicardial: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.epicardial[,9] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.epicardial$coefficients[sig.genes,5],treat.epicardial$coefficients[sig.genes,6],
+       labels=rownames(dt.epicardial)[sig.genes],col=2,cex=0.6)
+}
+```
+
+## Fibroblasts
+
+```{r}
+cont.fibro <- makeContrasts(YvF = 0.5*(fibro.young.Male + fibro.young.Female) - 0.5*(fibro.fetal.Male + fibro.fetal.Female),
+                         AvF = 0.5*(fibro.adult.Male + fibro.adult.Female) - 0.5*(fibro.fetal.Male + fibro.fetal.Female),
+                         AvY = 0.5*(fibro.adult.Male + fibro.adult.Female) - 0.5*(fibro.young.Male + fibro.young.Female),
+                         SexFetal = fibro.fetal.Male - fibro.fetal.Female,
+                         SexYoung = fibro.young.Male - fibro.young.Female,
+                         SexAdult = fibro.adult.Male - fibro.adult.Female,
+                         InteractionAF = (fibro.adult.Male - fibro.fetal.Male) - (fibro.adult.Female - fibro.fetal.Female),
+                         InteractionYF = (fibro.young.Male - fibro.fetal.Male) - (fibro.young.Female - fibro.fetal.Female),
+                         InteractionAY = (fibro.adult.Male - fibro.young.Male) - (fibro.adult.Female - fibro.young.Female),
+                         levels=design)
+fit.fibro <- contrasts.fit(fit,contrasts = cont.fibro)
+fit.fibro <- eBayes(fit.fibro,robust=TRUE)
+
+summary(decideTests(fit.fibro))
+
+treat.fibro <- treat(fit.fibro,lfc=0.5)
+
+dt.fibro<-decideTests(treat.fibro)
+
+summary(dt.fibro)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.fibro,coef=i,status=dt.fibro[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.fibro)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("fibroblast cells")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.fibro,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.fibro,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.fibro,coef=3,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.fibro,coef=4)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.fibro,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.fibro,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.fibro,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.fibro,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.fibro,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.fibro$coefficients[,1],treat.fibro$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="Fibroblasts: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.fibro[,1] !=0 | dt.fibro[,2] != 0
+text(treat.fibro$coefficients[sig.genes,1],treat.fibro$coefficients[sig.genes,2],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,4],treat.fibro$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="Fibroblasts: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.fibro[,4] !=0 | dt.fibro[,5] != 0
+text(treat.fibro$coefficients[sig.genes,4],treat.fibro$coefficients[sig.genes,5],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,4],treat.fibro$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="Fibroblasts: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.fibro[,4] !=0 | dt.fibro[,6] != 0
+text(treat.fibro$coefficients[sig.genes,4],treat.fibro$coefficients[sig.genes,6],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,5],treat.fibro$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="Fibroblasts: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.fibro[,5] !=0 | dt.fibro[,6] != 0
+text(treat.fibro$coefficients[sig.genes,5],treat.fibro$coefficients[sig.genes,6],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,4],treat.fibro$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="Fibroblasts: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.fibro[,8] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.fibro$coefficients[sig.genes,4],treat.fibro$coefficients[sig.genes,5],
+       labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,4],treat.fibro$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="Fibroblast: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.fibro[,7] !=0 
+text(treat.fibro$coefficients[sig.genes,4],treat.fibro$coefficients[sig.genes,6],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.fibro$coefficients[,5],treat.fibro$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="Fibroblasts: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.fibro[,9] !=0 
+text(treat.fibro$coefficients[sig.genes,5],treat.fibro$coefficients[sig.genes,6],labels=rownames(dt.fibro)[sig.genes],col=2,cex=0.6)
+```
+
+
+## Smooth muscle cells
+
+```{r}
+cont.smc <- makeContrasts(YvF = 0.5*(smc.young.Male + smc.young.Female) - 0.5*(smc.fetal.Male + smc.fetal.Female),
+                         AvF = 0.5*(smc.adult.Male + smc.adult.Female) - 0.5*(smc.fetal.Male + smc.fetal.Female),
+                         AvY = 0.5*(smc.adult.Male + smc.adult.Female) - 0.5*(smc.young.Male + smc.young.Female),
+                         SexFetal = smc.fetal.Male - smc.fetal.Female,
+                         SexYoung = smc.young.Male - smc.young.Female,
+                         SexAdult = smc.adult.Male - smc.adult.Female,
+                         InteractionAF = (smc.adult.Male - smc.fetal.Male) - (smc.adult.Female - smc.fetal.Female),
+                         InteractionYF = (smc.young.Male - smc.fetal.Male) - (smc.young.Female - smc.fetal.Female),
+                         InteractionAY = (smc.adult.Male - smc.young.Male) - (smc.adult.Female - smc.young.Female),
+                         levels=design)
+fit.smc <- contrasts.fit(fit,contrasts = cont.smc)
+fit.smc <- eBayes(fit.smc,robust=TRUE)
+
+summary(decideTests(fit.smc))
+
+treat.smc <- treat(fit.smc,lfc=0.5)
+
+dt.smc<-decideTests(treat.smc)
+
+summary(dt.smc)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.smc,coef=i,status=dt.smc[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.smc)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("smooth muscle cells")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.smc,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.smc,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.smc,coef=3)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.smc,coef=4,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.smc,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.smc,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.smc,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.smc,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.smc,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.smc$coefficients[,1],treat.smc$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="smooth muscle cells: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.smc[,1] !=0 | dt.smc[,2] != 0
+text(treat.smc$coefficients[sig.genes,1],treat.smc$coefficients[sig.genes,2],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,4],treat.smc$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="smooth muscle cells: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.smc[,4] !=0 | dt.smc[,5] != 0
+text(treat.smc$coefficients[sig.genes,4],treat.smc$coefficients[sig.genes,5],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,4],treat.smc$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="smooth muscle cells: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.smc[,4] !=0 | dt.smc[,6] != 0
+text(treat.smc$coefficients[sig.genes,4],treat.smc$coefficients[sig.genes,6],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,5],treat.smc$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="smooth muscle cells: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.smc[,5] !=0 | dt.smc[,6] != 0
+text(treat.smc$coefficients[sig.genes,5],treat.smc$coefficients[sig.genes,6],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,4],treat.smc$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="smooth muscle cells: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.smc[,8] !=0 
+text(treat.smc$coefficients[sig.genes,4],treat.smc$coefficients[sig.genes,5],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,4],treat.smc$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="smooth muscle cells: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.smc[,7] !=0 
+text(treat.smc$coefficients[sig.genes,4],treat.smc$coefficients[sig.genes,6],labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.smc$coefficients[,5],treat.smc$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="smooth muscle cells: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.smc[,9] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.smc$coefficients[sig.genes,5],treat.smc$coefficients[sig.genes,6],
+       labels=rownames(dt.smc)[sig.genes],col=2,cex=0.6)
+}
+```
+
+
+## Endothelial cells
+
+```{r}
+cont.endo <- makeContrasts(YvF = 0.5*(endo.young.Male + endo.young.Female) - 0.5*(endo.fetal.Male + endo.fetal.Female),
+                         AvF = 0.5*(endo.adult.Male + endo.adult.Female) - 0.5*(endo.fetal.Male + endo.fetal.Female),
+                         AvY = 0.5*(endo.adult.Male + endo.adult.Female) - 0.5*(endo.young.Male + endo.young.Female),
+                         SexFetal = endo.fetal.Male - endo.fetal.Female,
+                         SexYoung = endo.young.Male - endo.young.Female,
+                         SexAdult = endo.adult.Male - endo.adult.Female,
+                         InteractionAF = (endo.adult.Male - endo.fetal.Male) - (endo.adult.Female - endo.fetal.Female),
+                         InteractionYF = (endo.young.Male - endo.fetal.Male) - (endo.young.Female - endo.fetal.Female),
+                         InteractionAY = (endo.adult.Male - endo.young.Male) - (endo.adult.Female - endo.young.Female),
+                         levels=design)
+fit.endo <- contrasts.fit(fit,contrasts = cont.endo)
+fit.endo <- eBayes(fit.endo,robust=TRUE)
+
+summary(decideTests(fit.endo))
+
+treat.endo <- treat(fit.endo,lfc=0.5)
+
+dt.endo<-decideTests(treat.endo)
+
+summary(dt.endo)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.endo,coef=i,status=dt.endo[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.endo)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("Endothelial cells")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.endo,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.endo,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.endo,coef=3)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.endo,coef=4)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.endo,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.endo,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.endo,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.endo,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.endo,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.endo$coefficients[,1],treat.endo$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="endothelial cells: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.endo[,1] !=0 | dt.endo[,2] != 0
+text(treat.endo$coefficients[sig.genes,1],treat.endo$coefficients[sig.genes,2],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,4],treat.endo$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="endothelial cells: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.endo[,4] !=0 | dt.endo[,5] != 0
+text(treat.endo$coefficients[sig.genes,4],treat.endo$coefficients[sig.genes,5],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,4],treat.endo$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="endothelial cells: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.endo[,4] !=0 | dt.endo[,6] != 0
+text(treat.endo$coefficients[sig.genes,4],treat.endo$coefficients[sig.genes,6],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,5],treat.endo$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="endothelial cells: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.endo[,5] !=0 | dt.endo[,6] != 0
+text(treat.endo$coefficients[sig.genes,5],treat.endo$coefficients[sig.genes,6],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,4],treat.endo$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="endothelial cells: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.endo[,8] !=0 
+text(treat.endo$coefficients[sig.genes,4],treat.endo$coefficients[sig.genes,5],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,4],treat.endo$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="endothelial cells: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.endo[,7] !=0 
+text(treat.endo$coefficients[sig.genes,4],treat.endo$coefficients[sig.genes,6],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.endo$coefficients[,5],treat.endo$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="endothelial cells: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.endo[,9] !=0 
+text(treat.endo$coefficients[sig.genes,5],treat.endo$coefficients[sig.genes,6],labels=rownames(dt.endo)[sig.genes],col=2,cex=0.6)
+```
+
+## Immune cells
+
+```{r}
+cont.immune <- makeContrasts(YvF = 0.5*(immune.young.Male + immune.young.Female) - 0.5*(immune.fetal.Male + immune.fetal.Female),
+                         AvF = 0.5*(immune.adult.Male + immune.adult.Female) - 0.5*(immune.fetal.Male + immune.fetal.Female),
+                         AvY = 0.5*(immune.adult.Male + immune.adult.Female) - 0.5*(immune.young.Male + immune.young.Female),
+                         SexFetal = immune.fetal.Male - immune.fetal.Female,
+                         SexYoung = immune.young.Male - immune.young.Female,
+                         SexAdult = immune.adult.Male - immune.adult.Female,
+                         InteractionAF = (immune.adult.Male - immune.fetal.Male) - (immune.adult.Female - immune.fetal.Female),
+                         InteractionYF = (immune.young.Male - immune.fetal.Male) - (immune.young.Female - immune.fetal.Female),
+                         InteractionAY = (immune.adult.Male - immune.young.Male) - (immune.adult.Female - immune.young.Female),
+                         levels=design)
+fit.immune <- contrasts.fit(fit,contrasts = cont.immune)
+fit.immune <- eBayes(fit.immune,robust=TRUE)
+
+summary(decideTests(fit.immune))
+
+treat.immune <- treat(fit.immune,lfc=0.5)
+
+dt.immune<-decideTests(treat.immune)
+
+summary(dt.immune)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.immune,coef=i,status=dt.immune[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.immune)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("Immune cells")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.immune,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.immune,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.immune,coef=3)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.immune,coef=4)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.immune,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.immune,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.immune,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.immune,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.immune,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.immune$coefficients[,1],treat.immune$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="immune cells: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.immune[,1] !=0 | dt.immune[,2] != 0
+text(treat.immune$coefficients[sig.genes,1],treat.immune$coefficients[sig.genes,2],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,4],treat.immune$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="immune cells: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.immune[,4] !=0 | dt.immune[,5] != 0
+text(treat.immune$coefficients[sig.genes,4],treat.immune$coefficients[sig.genes,5],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,4],treat.immune$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="immune cells: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.immune[,4] !=0 | dt.immune[,6] != 0
+text(treat.immune$coefficients[sig.genes,4],treat.immune$coefficients[sig.genes,6],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,5],treat.immune$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="immune cells: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.immune[,5] !=0 | dt.immune[,6] != 0
+text(treat.immune$coefficients[sig.genes,5],treat.immune$coefficients[sig.genes,6],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,4],treat.immune$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="immune cells: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.immune[,8] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.immune$coefficients[sig.genes,4],treat.immune$coefficients[sig.genes,5],
+       labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,4],treat.immune$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="immune cells: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.immune[,7] !=0 
+text(treat.immune$coefficients[sig.genes,4],treat.immune$coefficients[sig.genes,6],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.immune$coefficients[,5],treat.immune$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="immune cells: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.immune[,9] !=0 
+text(treat.immune$coefficients[sig.genes,5],treat.immune$coefficients[sig.genes,6],labels=rownames(dt.immune)[sig.genes],col=2,cex=0.6)
+```
+
+## Neurons
+
+```{r}
+cont.neurons <- makeContrasts(YvF = 0.5*(neurons.young.Male + neurons.young.Female) - 0.5*(neurons.fetal.Male + neurons.fetal.Female),
+                         AvF = 0.5*(neurons.adult.Male + neurons.adult.Female) - 0.5*(neurons.fetal.Male + neurons.fetal.Female),
+                         AvY = 0.5*(neurons.adult.Male + neurons.adult.Female) - 0.5*(neurons.young.Male + neurons.young.Female),
+                         SexFetal = neurons.fetal.Male - neurons.fetal.Female,
+                         SexYoung = neurons.young.Male - neurons.young.Female,
+                         SexAdult = neurons.adult.Male - neurons.adult.Female,
+                         InteractionAF = (neurons.adult.Male - neurons.fetal.Male) - (neurons.adult.Female - neurons.fetal.Female),
+                         InteractionYF = (neurons.young.Male - neurons.fetal.Male) - (neurons.young.Female - neurons.fetal.Female),
+                         InteractionAY = (neurons.adult.Male - neurons.young.Male) - (neurons.adult.Female - neurons.young.Female),
+                         levels=design)
+fit.neurons <- contrasts.fit(fit,contrasts = cont.neurons)
+fit.neurons <- eBayes(fit.neurons,robust=TRUE)
+
+summary(decideTests(fit.neurons))
+
+treat.neurons <- treat(fit.neurons,lfc=0.5)
+
+dt.neurons<-decideTests(treat.neurons)
+
+summary(dt.neurons)
+```
+
+```{r, fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:9){
+  plotMD(treat.neurons,coef=i,status=dt.neurons[,i],hl.col=c("blue","red"))
+  abline(h=0,col="grey")
+}
+```
+
+
+```{r,fig.width=10,fig.height=7}
+par(mfrow=c(1,1))
+par(mar=c(7,4,2,2))
+barplot(summary(dt.neurons)[-2,],beside=TRUE,legend=TRUE,col=c("blue","red"),ylab="Number of significant genes",las=2)
+title("Neurons")
+```
+
+### Young vs Fetal
+```{r}
+options(digits=3)
+topTreat(treat.neurons,coef=1,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Fetal
+```{r}
+topTreat(treat.neurons,coef=2,n=20,p.value=0.05)[,-c(1:3)]
+```
+
+### Adult vs Young
+```{r}
+topTreat(treat.neurons,coef=3)[,-c(1:3)]
+```
+
+### Male vs Female in fetal samples
+```{r}
+topTreat(treat.neurons,coef=4)[,-c(1:3)]
+```
+
+### Male vs Female in young samples
+```{r}
+topTreat(treat.neurons,coef=5)[,-c(1:3)]
+```
+
+### Male vs Female in adult samples
+```{r}
+topTreat(treat.neurons,coef=6)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and fetal
+```{r}
+topTreat(treat.neurons,coef=7)[,-c(1:3)]
+```
+
+### Interaction of sex differences between young and fetal
+```{r}
+topTreat(treat.neurons,coef=8)[,-c(1:3)]
+```
+
+### Interaction of sex differences between adult and young
+```{r}
+topTreat(treat.neurons,coef=9)[,-c(1:3)]
+```
+
+```{r,fig.width=6,fig.height=6}
+par(mar=c(5,5,3,2))
+plot(treat.neurons$coefficients[,1],treat.neurons$coefficients[,2],xlab="logFC: Young vs Fetal", ylab="logFC: Adult vs Fetal",main="neurons: Development",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0,col=colours()[c(175)])
+sig.genes <-  dt.neurons[,1] !=0 | dt.neurons[,2] != 0
+text(treat.neurons$coefficients[sig.genes,1],treat.neurons$coefficients[sig.genes,2],labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,4],treat.neurons$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="neurons: Sex differences - fetal and young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.neurons[,4] !=0 | dt.neurons[,5] != 0
+text(treat.neurons$coefficients[sig.genes,4],treat.neurons$coefficients[sig.genes,5],labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,4],treat.neurons$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="neurons: Sex differences - fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.neurons[,4] !=0 | dt.neurons[,6] != 0
+if(sum(sig.genes)!=0){
+  text(treat.neurons$coefficients[sig.genes,4],treat.neurons$coefficients[sig.genes,6],
+       labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,5],treat.neurons$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="neurons: Sex differences - young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+sig.genes <- dt.neurons[,5] !=0 | dt.neurons[,6] != 0
+text(treat.neurons$coefficients[sig.genes,5],treat.neurons$coefficients[sig.genes,6],labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+abline(h=0,v=0)
+```
+
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,4],treat.neurons$coefficients[,5],xlab="logFC: Fetal Male vs Female", ylab="logFC: Young Male vs Female",main="neurons: Interaction term: Fetal vs Young",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.neurons[,8] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.neurons$coefficients[sig.genes,4],treat.neurons$coefficients[sig.genes,5],
+       labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,4],treat.neurons$coefficients[,6],xlab="logFC: Fetal Male vs Female", ylab="logFC: Adult Male vs Female",main="neurons: Interaction term: fetal and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.neurons[,7] !=0 
+if(sum(sig.genes)!=0){
+  text(treat.neurons$coefficients[sig.genes,4],treat.neurons$coefficients[sig.genes,6],
+       labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+}
+```
+
+```{r,fig.width=6,fig.height=6}
+plot(treat.neurons$coefficients[,5],treat.neurons$coefficients[,6],xlab="logFC: Young Male vs Female", ylab="logFC: Adult Male vs Female",main="neurons: Interaction term: young and adult",col=rgb(0,0,1,alpha=0.25),pch=16,cex=0.8)
+abline(h=0,v=0)
+sig.genes <- dt.neurons[,9] !=0 
+text(treat.neurons$coefficients[sig.genes,5],treat.neurons$coefficients[sig.genes,6],labels=rownames(dt.neurons)[sig.genes],col=2,cex=0.6)
+```
+
+
+# Write out results
+
+```{r}
+fdr.cardio <- apply(treat.cardio$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.cardio <- data.frame(treat.cardio$genes,LogFC=treat.cardio$coefficients,AveExp=treat.cardio$Amean,tstat=treat.cardio$t, pvalue=treat.cardio$p.value, fdr=fdr.cardio)
+write.csv(output.cardio,file="./output/DEAnalysis/BroadCellTypes/de-cardio-all.csv")
+
+fdr.endo <- apply(treat.endo$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.endo <- data.frame(treat.endo$genes,LogFC=treat.endo$coefficients,AveExp=treat.endo$Amean,tstat=treat.endo$t, pvalue=treat.endo$p.value, fdr=fdr.endo)
+write.csv(output.endo,file="./output/DEAnalysis/BroadCellTypes/de-endo-all.csv")
+
+fdr.epicardial <- apply(treat.epicardial$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.epicardial <- data.frame(treat.epicardial$genes,LogFC=treat.epicardial$coefficients,AveExp=treat.epicardial$Amean,tstat=treat.epicardial$t, pvalue=treat.epicardial$p.value, fdr=fdr.epicardial)
+write.csv(output.epicardial,file="./output/DEAnalysis/BroadCellTypes/de-epicardial-all.csv")
+
+fdr.fibro <- apply(treat.fibro$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.fibro <- data.frame(treat.fibro$genes,LogFC=treat.fibro$coefficients,AveExp=treat.fibro$Amean,tstat=treat.fibro$t, pvalue=treat.fibro$p.value, fdr=fdr.fibro)
+write.csv(output.fibro,file="./output/DEAnalysis/BroadCellTypes/de-fibro-all.csv")
+
+fdr.immune <- apply(treat.immune$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.immune <- data.frame(treat.immune$genes,LogFC=treat.immune$coefficients,AveExp=treat.immune$Amean,tstat=treat.immune$t, pvalue=treat.immune$p.value, fdr=fdr.immune)
+write.csv(output.immune,file="./output/DEAnalysis/BroadCellTypes/de-immune-all.csv")
+
+fdr.neurons <- apply(treat.neurons$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.neurons <- data.frame(treat.neurons$genes,LogFC=treat.neurons$coefficients,AveExp=treat.neurons$Amean,tstat=treat.neurons$t, pvalue=treat.neurons$p.value, fdr=fdr.neurons)
+write.csv(output.neurons,file="./output/DEAnalysis/BroadCellTypes/de-neurons-all.csv")
+
+fdr.smc <- apply(treat.smc$p.value, 2, function(x) p.adjust(x, method="BH"))
+output.smc <- data.frame(treat.smc$genes,LogFC=treat.smc$coefficients,AveExp=treat.smc$Amean,tstat=treat.smc$t, pvalue=treat.smc$p.value, fdr=fdr.smc)
+write.csv(output.smc,file="./output/DEAnalysis/BroadCellTypes/de-smc-all.csv")
+```
+
+```{r}
+# Standard limma analysis with no fold change cut-off
+# Cardiomyocytes
+for(i in 1:ncol(fit.cardio)){
+  write.csv(topTable(fit.cardio,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-cardio-",colnames(fit.cardio)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Endothelium
+for(i in 1:ncol(fit.endo)){
+  write.csv(topTable(fit.endo,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-endo-",colnames(fit.endo)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Epicardial
+for(i in 1:ncol(fit.epicardial)){
+  write.csv(topTable(fit.epicardial,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-epicardial-",colnames(fit.epicardial)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Fibroblasts
+for(i in 1:ncol(fit.fibro)){
+  write.csv(topTable(fit.fibro,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-fibro-",colnames(fit.fibro)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Immune
+for(i in 1:ncol(fit.immune)){
+  write.csv(topTable(fit.immune,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-immune-",colnames(fit.immune)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Neurons
+for(i in 1:ncol(fit.neurons)){
+  write.csv(topTable(fit.neurons,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-neurons-",colnames(fit.neurons)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# smooth muscle cells
+for(i in 1:ncol(fit.smc)){
+  write.csv(topTable(fit.smc,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/STD-ind/de-smc-",colnames(fit.smc)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+
+# TREAT analysis with log-fold change cut-off of 0.5
+# Cardiomyocytes
+for(i in 1:ncol(treat.cardio)){
+  write.csv(topTreat(treat.cardio,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-cardio-",colnames(treat.cardio)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Endothelium
+for(i in 1:ncol(treat.endo)){
+  write.csv(topTreat(treat.endo,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-endo-",colnames(treat.endo)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Epicardial
+for(i in 1:ncol(treat.epicardial)){
+  write.csv(topTreat(treat.epicardial,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-epicardial-",colnames(treat.epicardial)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Fibroblasts
+for(i in 1:ncol(treat.fibro)){
+  write.csv(topTreat(treat.fibro,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-fibro-",colnames(treat.fibro)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Immune
+for(i in 1:ncol(treat.immune)){
+  write.csv(topTreat(treat.immune,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-immune-",colnames(treat.immune)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# Neurons
+for(i in 1:ncol(treat.neurons)){
+  write.csv(topTreat(treat.neurons,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-neurons-",colnames(treat.neurons)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+
+# smooth muscle cells
+for(i in 1:ncol(treat.smc)){
+  write.csv(topTreat(treat.smc,coef=i,n="Inf"),
+            file=paste("./output/DEAnalysis/BroadCellTypes/TREAT-indiv/de-smc-",colnames(treat.smc)[i],".csv",sep=""),
+            row.names = FALSE)
+}
+```
+
+
+

@@ -1,0 +1,557 @@
+---
+title: 'Data integration and clustering of cardiomyocytes: fetal, young, adult'
+author: "Belinda Phipson"
+date: "10/17/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+```
+
+```{r}
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+```{r readTargets}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r readData}
+fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
+load(file="./output/RDataObjects/fetalObjs.Rdata")
+
+young.integrated <- readRDS(file="./output/RDataObjects/young-int.Rds")
+load(file="./output/RDataObjects/youngObjs.Rdata")
+
+adult.integrated <- readRDS(file="./output/RDataObjects/adult-int.Rds")
+load(file="./output/RDataObjects/adultObjs.Rdata")
+```
+
+# Set default clustering resolution
+
+```{r}
+# Default 0.3
+Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
+DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.3
+DimPlot(young.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.6
+DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+```
+
+# Merge all data together
+
+```{r}
+heart <- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = "heart")
+table(heart$orig.ident)
+```
+
+# Get cardiomyocytes only
+
+```{r}
+cardio <- subset(heart,subset = Broad_celltype == "Cardiomyocytes")
+```
+
+# Check for poor quality cells
+
+Cardiomyocytes are fairly large cells and we wouldn't expect them to only be expressing very few genes.
+
+```{r}
+par(mfrow=c(1,2))
+plot(density(cardio$nFeature_RNA),main="Number of genes detected")
+abline(v=500,col=2)
+plot(density(cardio$nCount_RNA),main="Library size")
+abline(v=2500,col=2)
+
+cardio <- subset(cardio, subset = nFeature_RNA > 500 & nCount_RNA > 2500)
+dim(cardio)
+table(cardio$biorep)
+```
+
+
+# Run new integration with SCtransform normalisation
+
+The new code does not work so I will take the same approach that I took integrating the samples within groups.
+
+```{r}
+cardio.list <- SplitObject(cardio, split.by = "biorep")
+min(sapply(cardio.list, ncol))
+```
+
+```{r}
+for (i in 1:length(cardio.list)) {
+    cardio.list[[i]] <- SCTransform(cardio.list[[i]], verbose = FALSE)
+}
+```
+
+
+```{r findanchors}
+cardio.anchors <- FindIntegrationAnchors(object.list = cardio.list, dims=1:30,anchor.features = 3000,k.filter=216)
+```
+
+```{r integrate}
+cardio.integrated <- IntegrateData(anchorset = cardio.anchors,dims=1:30)
+```
+
+# Perform clustering
+
+```{r}
+DefaultAssay(object = cardio.integrated) <- "integrated"
+```
+
+## Perform scaling and PCA
+
+```{r pca}
+cardio.integrated <- ScaleData(cardio.integrated, verbose = FALSE)
+cardio.integrated <- RunPCA(cardio.integrated, npcs = 50, verbose = FALSE)
+ElbowPlot(cardio.integrated,ndims=50)
+```
+
+```{r,fig.height=10, fig.width=12}
+VizDimLoadings(cardio.integrated, dims = 1:4, reduction = "pca")
+```
+
+```{r}
+DimPlot(cardio.integrated, reduction = "pca",group.by="orig.ident")
+DimPlot(cardio.integrated, reduction = "pca",group.by="biorep")
+DimPlot(cardio.integrated, reduction = "pca",group.by="sex")
+DimPlot(cardio.integrated, reduction = "pca",group.by="batch")
+```
+
+```{r,fig.height=10, fig.width=12}
+DimHeatmap(cardio.integrated, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(cardio.integrated, dims = 16:30, cells = 500, balanced = TRUE)
+DimHeatmap(cardio.integrated, dims = 31:45, cells = 500, balanced = TRUE)
+```
+
+## Perform nearest neighbours clustering
+
+```{r clust}
+cardio.integrated <- FindNeighbors(cardio.integrated, dims = 1:20)
+cardio.integrated <- FindClusters(cardio.integrated, resolution = 0.1)
+table(Idents(cardio.integrated))
+```
+
+```{r}
+par(mar=c(5,4,2,2))
+barplot(table(Idents(cardio.integrated)),ylab="Number of cells",xlab="Clusters")
+title("Number of cells in each cluster")
+```
+
+
+## Visualisation with TSNE
+
+```{r tsne}
+set.seed(10)
+cardio.integrated <- RunTSNE(cardio.integrated, reduction = "pca", dims = 1:20)
+```
+
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+```
+
+```{r}
+pdf(file="./output/Figures/NormalDev/tsne-cardioALL-res01.pdf",width=10,height=8,onefile = FALSE)
+DimPlot(cardio.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+dev.off()
+```
+
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", group.by = "orig.ident")
+```
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", split.by = "orig.ident")
+```
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", group.by = "biorep")
+```
+
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", group.by = "sex")
+```
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", split.by = "sex")
+```
+
+```{r}
+DimPlot(cardio.integrated, reduction = "tsne", group.by = "batch")
+```
+
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(cardio.integrated),cardio.integrated$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(9),legend=TRUE)
+```
+
+```{r,fig.width=12,fig.height=4}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(cardio.integrated),cardio.integrated$orig.ident)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3))
+legend("topleft",legend=colnames(tab),fill=ggplotColors(3))
+```
+
+# Visualisation with clustree
+
+```{r}
+clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
+```
+```{r clustree}
+for(i in 1:length(clusres)){
+  cardio.integrated <- FindClusters(cardio.integrated, 
+                                   resolution = clusres[i])
+}
+```
+
+```{r}
+pct.male <- function(x) {mean(x=="m")}
+pct.female <- function(x) {mean(x=="f")}
+pct.fetal <- function(x) {mean(x=="fetal")}
+pct.young <- function(x) {mean(x=="young")}
+pct.adult <- function(x) {mean(x=="adult")}
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.female",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.male",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.fetal",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.young",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(cardio.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.adult",assay="RNA")
+```
+
+
+# Save Seurat object
+
+```{r}
+DefaultAssay(cardio.integrated) <- "RNA"
+Idents(cardio.integrated) <- cardio.integrated$integrated_snn_res.0.1
+```
+
+```{r}
+saveRDS(cardio.integrated,file="./output/RDataObjects/cardio-int-FYA-filtered.Rds")
+#cardio.integrated <- readRDS(file="./output/RDataObjects/cardio-int-FYA.Rds")
+# Load unfiltered counts matrix for every sample (object all)
+load("./output/RDataObjects/all-counts.Rdata")
+```
+
+```{r}
+columns(org.Hs.eg.db)
+ann <- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(all),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(all),ann$SYMBOL)
+ann <- ann[m,]
+table(ann$SYMBOL==rownames(all))
+```
+
+```{r}
+mito <- grep("mitochondrial",ann$GENENAME)
+length(mito)
+ribo <- grep("ribosomal",ann$GENENAME)
+length(ribo)
+missingEZID <- which(is.na(ann$ENTREZID))
+length(missingEZID)
+```
+
+# Find Markers
+
+```{r markers}
+#adultmarkers <- FindAllMarkers(adult.integrated, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+# Limma-trend for DE
+m <- match(colnames(cardio.integrated),colnames(all))
+all.counts <- all[,m]
+```
+
+```{r}
+chuck <- unique(c(mito,ribo,missingEZID))
+length(chuck)
+all.counts.keep <- all.counts[-chuck,]
+ann.keep <- ann[-chuck,]
+table(ann.keep$SYMBOL==rownames(all.counts.keep))
+```
+
+```{r}
+numzero.genes <- rowSums(all.counts.keep==0)
+
+#avg.exp <- rowMeans(cpm.DGEList(y.kid,log=TRUE))
+
+#plot(avg.exp,numzero.genes,xlab="Average log-normalised-counts",ylab="Number zeroes per gene")
+
+table(numzero.genes > (ncol(all.counts.keep)-20))
+
+keep.genes <- numzero.genes < (ncol(all.counts.keep)-20)
+table(keep.genes)
+
+all.keep <- all.counts.keep[keep.genes,]
+dim(all.keep)
+
+ann.keep <- ann.keep[keep.genes,]
+```
+
+
+```{r}
+y.cardio <- DGEList(all.keep)
+
+logcounts <- normCounts(y.cardio,log=TRUE,prior.count=0.5)
+
+#logcounts.n <- normalizeBetweenArrays(logcounts, method = "cyclicloess")
+
+maxclust <- length(levels(Idents(cardio.integrated)))-1
+
+grp <- paste("c",Idents(cardio.integrated),sep = "")
+grp <- factor(grp,levels = paste("c",0:maxclust,sep=""))
+
+design <- model.matrix(~0+grp+cardio.integrated$biorep)
+colnames(design)[1:(maxclust+1)] <- levels(grp)
+
+mycont <- matrix(0,ncol=length(levels(grp)),nrow=length(levels(grp)))
+colnames(mycont)<-levels(grp)
+diag(mycont)<-1
+mycont[upper.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+mycont[lower.tri(mycont)]<- -1/(length(levels(factor(grp)))-1)
+
+# Fill out remaining rows with 0s
+zero.rows <- matrix(0,ncol=length(levels(grp)),nrow=(ncol(design)-length(levels(Idents(cardio.integrated)))))
+test <- rbind(mycont,zero.rows)
+
+
+fit <- lmFit(logcounts,design)
+fit.cont <- contrasts.fit(fit,contrasts=test)
+fit.cont <- eBayes(fit.cont,trend=TRUE,robust=TRUE)
+
+fit.cont$genes <- ann.keep
+
+summary(decideTests(fit.cont))
+
+treat <- treat(fit.cont,lfc=0.5)
+
+dt <- decideTests(treat)
+summary(dt)
+
+```
+
+```{r,fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+for(i in 1:ncol(mycont)){
+  plotMD(treat,coef=i,status = dt[,i],hl.cex=0.5)
+  abline(h=0,col=colours()[c(226)])
+  lines(lowess(treat$Amean,treat$coefficients[,i]),lwd=1.5,col=4)
+}
+```
+
+## Write out marker genes for each cluster
+
+```{r eval=FALSE}
+contnames <- colnames(mycont)
+
+for(i in 1:length(contnames)){
+  topsig <- topTreat(treat,coef=i,n=Inf)
+  write.csv(topsig,file=paste("./output/MarkerAnalysis/Cardiomyocytes/Development/Filtered/Cluster-",contnames[i],".csv",sep=""))
+}
+```
+
+```{r}
+fdr <- apply(treat$p.value, 2, function(x) p.adjust(x, method="BH"))
+output <- data.frame(treat$genes,LogFC=treat$coefficients,AveExp=treat$Amean,tstat=treat$t, pvalue=treat$p.value, fdr=fdr)
+write.csv(output,file="./output/MarkerAnalysis/Cardiomyocytes/Development/Filtered/MarkerAnalysis.csv")
+```
+
+
+# Perform gene set testing on C2 and GO sets
+
+```{r}
+contnames <- colnames(mycont)
+
+load("./output/RDataObjects/human_c2_v5p2.rdata")
+load("./output/RDataObjects/human_c5_v5p2.rdata")
+
+c2.id <- ids2indices(Hs.c2,treat$genes$ENTREZID)
+c5.id <- ids2indices(Hs.c5,treat$genes$ENTREZID)
+
+reactome.id <-c2.id[grep("REACTOME",names(c2.id))]
+
+c2.c0 <- cameraPR(treat$t[,1],c2.id)
+reactome.c0 <- cameraPR(treat$t[,1],reactome.id)
+go.c0 <- cameraPR(treat$t[,1],c5.id)
+
+for(i in 1:length(contnames)){
+  write.csv(cameraPR(treat$t[,i],c2.id),file=paste("./output/MarkerAnalysis/Cardiomyocytes/Development/Filtered/GeneSetTests/c2-",contnames[i],".csv",sep=""))
+  write.csv(cameraPR(treat$t[,i],reactome.id),file=paste("./output/MarkerAnalysis/Cardiomyocytes/Development/Filtered/GeneSetTests/reactome-",contnames[i],".csv",sep=""))
+  write.csv(cameraPR(treat$t[,i],c5.id),file=paste("./output/MarkerAnalysis/Cardiomyocytes/Development/Filtered/GeneSetTests/go-",contnames[i],".csv",sep=""))
+}
+```
+
+# Check quality of clusters
+
+The quality of the clusters look good.
+
+```{r}
+par(mfrow=c(1,1))
+numgenes <- colSums(all.keep!=0)
+boxplot(numgenes~grp)
+```
+
+
+# Heatmap of marker genes
+
+```{r}
+sam <- factor(cardio.integrated$biorep,levels=c("f1","f2","f3","y1","y2","y3","a1","a2","a3"))
+newgrp <- paste(grp,sam,sep=".")
+newgrp <- factor(newgrp,levels=paste(rep(levels(grp),each=9),levels(sam),sep="."))
+o <-order(newgrp)
+clust <- rep(levels(grp),each=9)
+samps <- rep(levels(sam),length(levels(grp)))
+```
+
+## Summarise expression across cells 
+
+```{r}
+sumexpr <- matrix(NA,nrow=nrow(logcounts),ncol=length(levels(newgrp)))
+rownames(sumexpr) <- rownames(logcounts)
+colnames(sumexpr) <- levels(newgrp)
+
+for(i in 1:nrow(sumexpr)){
+  sumexpr[i,] <- tapply(logcounts[i,],newgrp,mean)
+}
+
+```
+
+```{r sigheatmap, fig.width=12,fig.height=12}
+sig.genes <- gene.label <- vector("list", length(levels(grp)))
+for(i in 1:length(sig.genes)){
+  top <- topTreat(treat,coef=i,n=Inf)
+  sig.genes[[i]] <- rownames(top)[top$logFC>0][1:10]
+  gene.label[[i]] <- paste(rownames(top)[top$logFC>0][1:10],levels(grp)[i],sep="-")
+} 
+
+csig <- unlist(sig.genes)
+genes <- unlist(gene.label)
+
+myColors <- list(Clust=NA,Sample=NA)
+myColors$Clust<-sample(ggplotColors(length(levels(grp))),length(levels(grp)))
+names(myColors$Clust)<-levels(grp)
+myColors$Sample <- sample(ggplotColors(length(levels(sam))),length(levels(sam)))
+names(myColors$Sample) <- levels(sam)
+
+
+pdf(file="./output/Figures/NormalDev/cardio-heatmap-siggenes-summarised-FYA-filtered.pdf",width=20,height=20,onefile = FALSE)
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+dev.off()
+```
+
+```{r, fig.width=10,fig.height=12}
+aheatmap(sumexpr[csig,],Rowv = NA,Colv = NA, labRow = genes,
+         annCol=list(Clust=clust,Sample=samps),
+         annColors=myColors,
+         fontsize=16,color="-RdYlBu",
+         scale="none")
+```
+
+# Heatmap of pre-identified heart genes
+
+```{r}
+hm <- read.delim("./data/heart-markers-long.txt",stringsAsFactors = FALSE)
+hgene <- toupper(hm$Gene)
+hgene <- unique(hgene)
+
+m <- match(hgene,rownames(sumexpr))
+m <- m[!is.na(m)]
+
+mycelltypes <- hm$Celltype[match(rownames(sumexpr)[m],toupper(hm$Gene))]
+mycelltypes <- factor(mycelltypes)
+
+mygenes <- rownames(sumexpr)[m]
+mygenelab <- paste(mygenes,mycelltypes,sep="_")
+
+pdf(file="./output/Figures/NormalDev/cardio-heatmap-hmarkers-summarised-FYA-filtered.pdf",width=20,height=15,onefile = FALSE)
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+ #        annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=14,color="-RdYlBu")
+dev.off()
+
+```
+
+```{r, fig.width=10,fig.height=12}
+aheatmap(sumexpr[m,],Rowv = NA,Colv = NA, labRow = mygenelab,
+         annCol=list(Clust=clust,Sample=samps),
+ #        annRow=list(Celltypes=mycelltypes),
+         annColors=myColors,
+         fontsize=14,color="-RdYlBu")
+```
+
+
+
+
+

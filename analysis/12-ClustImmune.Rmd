@@ -1,0 +1,304 @@
+---
+title: "Recluster immune cells"
+author: "Belinda Phipson"
+date: "10/31/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+```
+
+```{r}
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
+source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```
+
+```{r readTargets}
+targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r readData}
+fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
+load(file="./output/RDataObjects/fetalObjs.Rdata")
+
+young.integrated <- readRDS(file="./output/RDataObjects/young-int.Rds")
+load(file="./output/RDataObjects/youngObjs.Rdata")
+
+adult.integrated <- readRDS(file="./output/RDataObjects/adult-int.Rds")
+load(file="./output/RDataObjects/adultObjs.Rdata")
+```
+
+# Set default clustering resolution
+
+```{r}
+# Default 0.3
+Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
+DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.3
+DimPlot(young.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.6
+DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
+
+```
+
+# Merge all data together
+
+```{r}
+heart <- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = "heart")
+table(heart$orig.ident)
+DefaultAssay(object = heart) <- "RNA"
+table(heart$Broad_celltype)
+```
+
+# Get epicardial cells only
+
+```{r}
+immune <- subset(heart,subset = Broad_celltype == "Immune cells")
+dim(immune)
+```
+
+# Check for bad quality cells
+
+Check for cells with very low number of uniquely detected genes. 
+
+```{r}
+par(mfrow=c(1,2))
+plot(density(immune$nFeature_RNA),main="Number of genes detected")
+abline(v=500,col=2)
+plot(density(immune$nCount_RNA),main="Library size")
+abline(v=2500,col=2)
+
+#immune <- subset(immune, subset = nFeature_RNA > 500 & nCount_RNA > 2500)
+dim(immune)
+table(immune$biorep)
+```
+
+
+# Run new integration with SCtransform normalisation
+
+```{r}
+immune.list <- SplitObject(immune, split.by = "biorep")
+```
+
+```{r}
+for (i in 1:length(immune.list)) {
+    immune.list[[i]] <- SCTransform(immune.list[[i]], verbose = FALSE)
+}
+```
+
+```{r findanchors}
+kf <- min(sapply(immune.list, ncol))
+immune.anchors <- FindIntegrationAnchors(object.list = immune.list, dims=1:30,anchor.features = 3000,k.filter=kf)
+immune.integrated <- IntegrateData(anchorset = immune.anchors,dims=1:30)
+```
+
+# Perform clustering
+
+```{r}
+DefaultAssay(object = immune.integrated) <- "integrated"
+```
+
+## Perform scaling and PCA
+
+```{r pca}
+immune.integrated <- ScaleData(immune.integrated, verbose = FALSE)
+immune.integrated <- RunPCA(immune.integrated, npcs = 50, verbose = FALSE)
+ElbowPlot(immune.integrated,ndims=50)
+```
+
+```{r,fig.height=10, fig.width=12}
+VizDimLoadings(immune.integrated, dims = 1:4, reduction = "pca")
+```
+
+```{r}
+DimPlot(immune.integrated, reduction = "pca",group.by="orig.ident")
+DimPlot(immune.integrated, reduction = "pca",group.by="biorep")
+DimPlot(immune.integrated, reduction = "pca",group.by="sex")
+DimPlot(immune.integrated, reduction = "pca",group.by="batch")
+```
+
+```{r,fig.height=10, fig.width=12}
+DimHeatmap(immune.integrated, dims = 1:15, cells = 500, balanced = TRUE)
+DimHeatmap(immune.integrated, dims = 16:30, cells = 500, balanced = TRUE)
+#DimHeatmap(immune.integrated, dims = 31:45, cells = 500, balanced = TRUE)
+```
+
+## Perform nearest neighbours clustering
+
+```{r clust}
+immune.integrated <- FindNeighbors(immune.integrated, dims = 1:15)
+immune.integrated <- FindClusters(immune.integrated, resolution = 0.1)
+table(Idents(immune.integrated))
+```
+
+```{r}
+par(mfrow=c(1,1))
+par(mar=c(5,4,2,2))
+barplot(table(Idents(immune.integrated)),ylab="Number of cells",xlab="Clusters")
+title("Number of cells in each cluster")
+```
+
+
+## Visualisation with TSNE
+
+```{r tsne}
+set.seed(10)
+immune.integrated <- RunTSNE(immune.integrated, reduction = "pca", dims = 1:15)
+```
+
+
+```{r}
+DimPlot(immune.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+```
+
+```{r}
+pdf(file="./output/Figures/tsne-immuneALL-res01.pdf",width=10,height=8,onefile = FALSE)
+DimPlot(immune.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
+dev.off()
+```
+
+```{r}
+DimPlot(immune.integrated, reduction = "tsne", group.by = "orig.ident")
+```
+
+```{r,fig.width=12,fig.height=6}
+DimPlot(immune.integrated, reduction = "tsne", split.by = "orig.ident")
+```
+
+```{r}
+DimPlot(immune.integrated, reduction = "tsne", group.by = "biorep")
+```
+
+
+```{r}
+DimPlot(immune.integrated, reduction = "tsne", group.by = "sex")
+```
+
+```{r,fig.width=10,fig.height=7}
+DimPlot(immune.integrated, reduction = "tsne", split.by = "sex")
+```
+
+```{r}
+DimPlot(immune.integrated, reduction = "tsne", group.by = "batch")
+```
+
+
+```{r,fig.width=12,fig.height=6}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(immune.integrated),immune.integrated$biorep)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(9),legend=TRUE)
+```
+
+```{r,fig.width=12,fig.height=6}
+par(mfrow=c(1,1))
+par(mar=c(4,4,2,2))
+tab <- table(Idents(immune.integrated),immune.integrated$orig.ident)
+barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3))
+legend("topleft",legend=colnames(tab),fill=ggplotColors(3))
+```
+
+# Visualisation with clustree
+
+```{r}
+clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
+```
+```{r clustree}
+for(i in 1:length(clusres)){
+  immune.integrated <- FindClusters(immune.integrated, 
+                                   resolution = clusres[i])
+}
+```
+
+```{r}
+pct.male <- function(x) {mean(x=="m")}
+pct.female <- function(x) {mean(x=="f")}
+pct.fetal <- function(x) {mean(x=="fetal")}
+pct.young <- function(x) {mean(x=="young")}
+pct.adult <- function(x) {mean(x=="adult")}
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.female",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.",
+         node_colour = "sex", node_colour_aggr = "pct.male",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.fetal",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.young",assay="RNA")
+```
+
+```{r,fig.width=10,fig.height=10}
+clustree(immune.integrated, prefix = "integrated_snn_res.",
+         node_colour = "orig.ident", node_colour_aggr = "pct.adult",assay="RNA")
+```
+
+
+# Save Seurat object
+
+```{r}
+DefaultAssay(immune.integrated) <- "RNA"
+Idents(immune.integrated) <- immune.integrated$integrated_snn_res.0.1
+```
+
+```{r}
+saveRDS(immune.integrated,file="./output/RDataObjects/immune-int-FYA-filtered.Rds")
+#immune.integrated <- readRDS(file="./output/RDataObjects/immune-int-FYA.Rds")
+```
+
+```{r}
+# Load unfiltered counts matrix for every sample (object all)
+load("./output/RDataObjects/all-counts.Rdata")
+```

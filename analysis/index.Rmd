@@ -8,36 +8,57 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Single nuclei RNA-seq of the heart (LV)
+# Single nuclei RNA-seq of the human heart 
 
-The data analysis consists of a number of steps that are detailed in the scripts listed below.
+This site contains the results of the single nuclei analyses presented in 
+"Sex-specific control of human heart maturation by the progesterone receptor", 
+which has been accepted for publication in *Circulation* (1 February 2021). 
+Follow the links below to view the different aspects of the analysis.
+
+# Abstract
+
+**Background:** Despite in-depth knowledge of the molecular mechanisms controlling embryonic heart development, little is known about the signals governing postnatal maturation of the human heart. 
+
+**Methods and Results:** Here, we analyze the transcriptome and chromatin accessibility landscape of the developing human heart from early gestation to adulthood and uncover striking sex differences in the transcriptional programs underlying cardiac maturation. Our data identify the progesterone receptor as a key mediator of sex-dependent transcriptional programs during cardiomyocyte maturation. Functional validation studies in human cardiac organoids and mice demonstrate the progesterone receptor drives sex-specific metabolic programs and maturation of cardiac contractile properties. 
+
+**Conclusions:** These data provide a blueprint for understanding human heart maturation in both sexes and reveal an important role for the progesterone receptor in human heart development.
+
+# Authors
+
+Choon Boon Sim, Belinda Phipson, Mark Ziemann, Haloom Rafehi, Richard J. Mills, 
+Kevin I. Watt, Kwaku D. Abu-Bonsrah, Ravi K.R. Kalathur, Holly K. Voges, 
+Doan T. Dinh, Menno ter Huurne, Celine J. Vivien, Antony Kaspi, Harikrishnan Kaipanaickal, Alejandro Hidalgo, Leanne M.D. Delbridge, Rebecca L. Robker, Paul Gregorevic, Cristobal G. dos Remedios, Sean Lal, Adam T. Piers, Igor E. Konstantinov, David A. Elliott, Assam El-Osta, Alicia Oshlack, James E. Hudson, Enzo R. Porrello.
+
+# Analysis
+
+The data analysis consists of a number of steps that are detailed in the scripts 
+listed below.
 
 ## Quality control and clustering
 
 * [Quality control of the cells](01-QualityControl.html)
-* [Differential expression analysis of pseudobulk](01a-DEpseudobulk.html)
 * Data integration and clustering between biological replicates within group
     + [Fetal heart samples](02-ClusterFetal.html)
     + [Young heart samples](03-ClusterYoung.html)
     + [Adult heart samples](04-ClusterAdult.html)
+* [Marker analysis at broad cell type level](15-MarkerAnalysisBCT.html)
     
-## Normal development analysis
+## Differential expression analysis
 
 * [Differential expression analysis within broad cell types](DE-BroadCellTypes.html)
 
-* Recluster broad cell lineages
-    + [Cardiomyocytes](07a-ClustCardioFYA.html)
-    + [Epicardial cells](08-ClustEpicardial.html)
-    + [Fibroblast](09-ClustFibroblast.html)
-    + [Smooth muscle cells](10-ClustSMC.html)
-    + [Endothelial cells](11-ClustEndo.html)
-    + [Immune cells](12-ClustImmune.html)
-    + [Neurons](13-ClustNeuron.html)
-    
-* Differential expression analysis: normal development
-    + [Cardiomyocytes](07b-DECardioFYA.html)
+## Recluster broad cell lineages
+
+* [Cardiomyocytes](07a-ClustCardioFYA.html)
+* [Epicardial cells](08-ClustEpicardial.html)
+* [Fibroblast](09-ClustFibroblast.html)
+* [Smooth muscle cells](10-ClustSMC.html)
+* [Endothelial cells](11-ClustEndo.html)
+* [Immune cells](12-ClustImmune.html)
+* [Neurons](13-ClustNeuron.html)
     
 ## Differential proportions analysis with propeller
+
 * [Differential proportions analysis](06-Celltype-Composition.html) 
 
 

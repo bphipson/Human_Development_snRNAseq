@@ -13,5 +13,7 @@ The samples are heart biopsies from the left ventricle from three different deve
 
 * define the cell types present at each of the developmental stages
 * analyse differences in cell type composition across development
-* perform differential expression analysis across the developmental trajectory within each cell type
-* perform differential expression analysis between males and females to understand how sex plays a role in normal heart development
+* perform differential expression analysis across the developmental trajectory 
+within each broad cell type
+* perform differential expression analysis between males and females to 
+understand how sex plays a role in normal heart development
