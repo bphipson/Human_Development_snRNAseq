@@ -88,7 +88,7 @@ DefaultAssay(object = heart) <- "RNA"
 table(heart$Broad_celltype)
 ```
 
-# Get epicardial cells only
+# Get neuronal cells only
 
 ```{r}
 neuron <- subset(heart,subset = Broad_celltype == "Neurons")
