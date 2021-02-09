@@ -34,14 +34,14 @@ library(clustree)
 library(dplyr)
 ```
 
-```{r}
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```{r echo=FALSE}
+source("./code/normCounts.R")
+source("./code/findModes.R")
+source("./code/ggplotColors.R")
 ```
 
 ```{r readTargets}
-targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets <- read.delim("./data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
 targets$FileName2 <- paste(targets$FileName,"/",sep="")
 targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
 group <- c("Fetal_1","Fetal_2","Fetal_3",
@@ -53,7 +53,7 @@ m <- match(group, targets$Group_ID2)
 targets <- targets[m,]
 ```
 
-```{r readData}
+```{r eval=FALSE}
 fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
 load(file="./output/RDataObjects/fetalObjs.Rdata")
 
@@ -66,7 +66,7 @@ load(file="./output/RDataObjects/adultObjs.Rdata")
 
 # Set default clustering resolution
 
-```{r}
+```{r eval=FALSE}
 # Default 0.3
 Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
 DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
@@ -81,18 +81,22 @@ DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend
 
 # Merge all data together
 
-```{r}
+```{r eval=FALSE}
 heart <- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = "heart")
-table(heart$orig.ident)
 DefaultAssay(object = heart) <- "RNA"
 ```
 
 # Get smooth muscle cells only
 
-```{r}
+```{r eval=FALSE}
 smc <- subset(heart,subset = Broad_celltype == "Smooth muscle cells")
 dim(smc)
 ```
+
+```{r echo=FALSE}
+smc <- readRDS(file="./output/smc-int-FYA-filtered.Rds")
+```
+
 
 # Check for poor quality cells
 
@@ -115,20 +119,24 @@ table(smc$biorep)
 
 There are very few cells for each biological replicate, so I will normalise and integrate the data by group rather than biological replicate.
 
-```{r}
+```{r eval=FALSE}
 smc.list <- SplitObject(smc, split.by = "orig.ident")
 ```
 
-```{r}
+```{r eval=FALSE}
 for (i in 1:length(smc.list)) {
     smc.list[[i]] <- SCTransform(smc.list[[i]], verbose = FALSE)
 }
 ```
 
-```{r findanchors}
+```{r eval=FALSE}
 kf <- min(sapply(smc.list, ncol))
 smc.anchors <- FindIntegrationAnchors(object.list = smc.list, dims=1:30,anchor.features = 3000,k.filter=kf)
 smc.integrated <- IntegrateData(anchorset = smc.anchors,dims=1:30)
+```
+
+```{r echo=FALSE}
+smc.integrated <- smc
 ```
 
 # Perform clustering
@@ -139,7 +147,7 @@ DefaultAssay(object = smc.integrated) <- "integrated"
 
 ## Perform scaling and PCA
 
-```{r pca}
+```{r eval=FALSE}
 smc.integrated <- ScaleData(smc.integrated, verbose = FALSE)
 smc.integrated <- RunPCA(smc.integrated, npcs = 50, verbose = FALSE)
 ElbowPlot(smc.integrated,ndims=50)
@@ -164,9 +172,12 @@ DimHeatmap(smc.integrated, dims = 1:15, cells = 500, balanced = TRUE)
 
 ## Perform nearest neighbours clustering
 
-```{r clust}
+```{r eval=FALSE}
 smc.integrated <- FindNeighbors(smc.integrated, dims = 1:10)
 smc.integrated <- FindClusters(smc.integrated, resolution = 0.1)
+```
+
+```{r}
 table(Idents(smc.integrated))
 ```
 
@@ -180,7 +191,7 @@ title("Number of cells in each cluster")
 
 ## Visualisation with TSNE
 
-```{r tsne}
+```{r eval=FALSE}
 set.seed(10)
 smc.integrated <- RunTSNE(smc.integrated, reduction = "pca", dims = 1:10)
 ```
@@ -190,7 +201,7 @@ smc.integrated <- RunTSNE(smc.integrated, reduction = "pca", dims = 1:10)
 DimPlot(smc.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
 ```
 
-```{r}
+```{r eval=FALSE}
 pdf(file="./output/Figures/tsne-smcALL-res01.pdf",width=10,height=8,onefile = FALSE)
 DimPlot(smc.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
 dev.off()
@@ -239,10 +250,10 @@ legend("topleft",legend=colnames(tab),fill=ggplotColors(3))
 
 # Visualisation with clustree
 
-```{r}
+```{r eval=FALSE}
 clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
 ```
-```{r clustree}
+```{r eval=FALSE}
 for(i in 1:length(clusres)){
   smc.integrated <- FindClusters(smc.integrated, 
                                    resolution = clusres[i])
@@ -294,7 +305,7 @@ DefaultAssay(smc.integrated) <- "RNA"
 Idents(smc.integrated) <- smc.integrated$integrated_snn_res.0.1
 ```
 
-```{r}
+```{r eval=FALSE}
 saveRDS(smc.integrated,file="./output/RDataObjects/smc-int-FYA-filtered.Rds")
 #smc.integrated <- readRDS(file="./output/RDataObjects/smc-int-FYA.Rds")
 # Load unfiltered counts matrix for every sample (object all)

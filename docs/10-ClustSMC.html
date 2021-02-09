@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -28,8 +27,27 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -91,7 +109,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -240,6 +257,7 @@ $(document).ready(function () {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -268,6 +286,12 @@ $(document).ready(function () {
 }
 }
 
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
 
 .toc-content {
   padding-left: 30px;
@@ -342,7 +366,7 @@ div.tocify {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="index.html">Porello-heart-snRNAseq</a>
+      <a class="navbar-brand" href="index.html">Human_Development_snRNAseq</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
@@ -358,8 +382,8 @@ div.tocify {
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://git.mcri.edu.au/bioinformatics/Porello-heart-snRNAseq">
-    <span class="fa fa-gitlab"></span>
+  <a href="https://github.com/bphipson/Human_Development_snRNAseq">
+    <span class="fa fa-github"></span>
      
     Source code
   </a>
@@ -368,13 +392,6 @@ div.tocify {
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
-
-<!-- Add a small amount of space between sections. -->
-<style type="text/css">
-div.section {
-  padding-top: 12px;
-}
-</style>
 
 <div class="fluid-row" id="header">
 
@@ -389,7 +406,7 @@ div.section {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -398,7 +415,7 @@ div.section {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -407,17 +424,17 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2019-10-31
+<strong>Last updated:</strong> 2021-02-09
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
-<strong>Knit directory:</strong> <code>Porello-heart-snRNAseq/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+<strong>Knit directory:</strong> <code>Human_Development_snRNAseq/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
 This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
-  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.3.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
 </p>
 <hr>
 </div>
@@ -426,12 +443,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -450,12 +467,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20190603code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20190603)</code> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200812code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200812)</code> </a>
 </p>
 </div>
-<div id="strongSeedstrongcodesetseed20190603code" class="panel-collapse collapse">
+<div id="strongSeedstrongcodesetseed20200812code" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The command <code>set.seed(20190603)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+<p>The command <code>set.seed(20200812)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
 </div>
 </div>
 </div>
@@ -486,27 +503,41 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgitmcrieduaubioinformaticsporelloheartsnrnaseqtree286b88b6653e56fa91eda1eed4f241d5a4a312cctargetblank286b88ba"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/tree/286b88b6653e56fa91eda1eed4f241d5a4a312cc" target="_blank">286b88b</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgitmcrieduaubioinformaticsporelloheartsnrnaseqtree286b88b6653e56fa91eda1eed4f241d5a4a312cctargetblank286b88ba" class="panel-collapse collapse">
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombphipsonHumanDevelopmentsnRNAseqtree2e22ca489de68551744b994cdeae71a29326d8fdtargetblank2e22ca4a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bphipson/Human_Development_snRNAseq/tree/2e22ca489de68551744b994cdeae71a29326d8fd" target="_blank">2e22ca4</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombphipsonHumanDevelopmentsnRNAseqtree2e22ca489de68551744b994cdeae71a29326d8fdtargetblank2e22ca4a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
-Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/bphipson/Human_Development_snRNAseq/tree/2e22ca489de68551744b994cdeae71a29326d8fd" target="_blank">2e22ca4</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
 </p>
 <pre><code>
 Ignored files:
     Ignored:    .Rhistory
     Ignored:    .Rproj.user/
+    Ignored:    data/.DS_Store
 
 Untracked files:
-    Untracked:  analysis/07b-DECardioFYA.Rmd
-    Untracked:  analysis/PBapproachMarker-cardio.Rmd
-    Untracked:  analysis/doublet-detection.Rmd
-    Untracked:  broad_props.csv
-    Untracked:  code/ReadDataObjects.R
-    Untracked:  code/getTransformedProps.R
     Untracked:  data/adult-clust.txt
+    Untracked:  data/cellinfoALL.Rdata
     Untracked:  data/dcm-clust.txt
     Untracked:  data/fetal-clust.txt
     Untracked:  data/gstlist-adult.Rdata
@@ -516,36 +547,21 @@ Untracked files:
     Untracked:  data/gstlist-young.Rdata
     Untracked:  data/heart-markers-long.txt
     Untracked:  data/immune-markers-long.txt
-    Untracked:  data/pseudobulk-pool.Rds
     Untracked:  data/pseudobulk.Rds
     Untracked:  data/targets_pools.txt
     Untracked:  data/young-clust.txt
-    Untracked:  output/AllAdult-clustermarkers-v2.csv
-    Untracked:  output/AllAdult-clustermarkers.csv
-    Untracked:  output/AllFetal-clustermarkers.csv
-    Untracked:  output/AllYoung-clustermarkers.csv
-    Untracked:  output/Alldcm-clustermarkers.csv
-    Untracked:  output/DEAnalysis/
-    Untracked:  output/Figures/
-    Untracked:  output/MarkerAnalysis/
-    Untracked:  output/RDataObjects/
-    Untracked:  output/cardio-numcells-clusters.csv
-    Untracked:  output/cardio-numcells-clusters.txt
-    Untracked:  output/fetal1-clustermarkers.csv
-    Untracked:  output/fetal2-clustermarkers.csv
-    Untracked:  output/fetal3-clustermarkers.csv
-    Untracked:  output/heatmap-top10-adultmarkergenes.pdf
-    Untracked:  output/young1-clustermarkers.csv
+    Untracked:  output/adult-int.Rds
+    Untracked:  output/adultObjs.Rdata
+    Untracked:  output/endo-int-FYA-filtered.Rds
+    Untracked:  output/fetal-int.Rds
+    Untracked:  output/fetalObjs.Rdata
+    Untracked:  output/heartFYA.Rds
+    Untracked:  output/smc-int-FYA-filtered.Rds
+    Untracked:  output/young-int.Rds
+    Untracked:  output/youngObjs.Rdata
 
 Unstaged changes:
-    Modified:   analysis/01-QualityControl.Rmd
-    Modified:   analysis/01a-DEpseudobulk.Rmd
-    Modified:   analysis/02-ClusterFetal.Rmd
-    Modified:   analysis/02c-ClusterFetal3.Rmd
-    Modified:   analysis/03-ClusterYoung.Rmd
-    Modified:   analysis/04-ClusterAdult.Rmd
-    Modified:   analysis/07a-ClustCardioFYA.Rmd
-    Modified:   analysis/index.Rmd
+    Modified:   analysis/10-ClustSMC.Rmd
 
 </code></pre>
 <p>
@@ -560,7 +576,7 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <div id="versions" class="tab-pane fade">
 
 <p>
-These are the previous versions of the R Markdown and HTML files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view them.
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/10-ClustSMC.Rmd</code>) and HTML (<code>docs/10-ClustSMC.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
 </p>
 <div class="table-responsive">
 <table class="table table-condensed table-hover">
@@ -589,50 +605,16 @@ Message
 Rmd
 </td>
 <td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/286b88b6653e56fa91eda1eed4f241d5a4a312cc/analysis/10-ClustSMC.Rmd" target="_blank">286b88b</a>
+<a href="https://github.com/bphipson/Human_Development_snRNAseq/blob/ffb8763937d9fada0c24561225f2c0112d36cd93/analysis/10-ClustSMC.Rmd" target="_blank">ffb8763</a>
 </td>
 <td>
-Belinda Phipson
+bphipson
 </td>
 <td>
-2019-10-31
+2021-02-08
 </td>
 <td>
-immune, endo, smc reclustering
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/10-ClustSMC.html" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/36f15a6d22d083c4cbfc122399d78d348cfa9d6c/analysis/10-ClustSMC.Rmd" target="_blank">36f15a6</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-30
-</td>
-<td>
-add endothelial reclustering, fixed smc clustering
+Added all analysis files
 </td>
 </tr>
 <tr>
@@ -640,50 +622,16 @@ add endothelial reclustering, fixed smc clustering
 html
 </td>
 <td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/878c13cb201f8d2db7498f6771251812324ffd4c/public/10-ClustSMC.html" target="_blank">878c13c</a>
+<a href="https://rawcdn.githack.com/bphipson/Human_Development_snRNAseq/ffb8763937d9fada0c24561225f2c0112d36cd93/docs/10-ClustSMC.html" target="_blank">ffb8763</a>
 </td>
 <td>
-Belinda Phipson
+bphipson
 </td>
 <td>
-2019-10-30
+2021-02-08
 </td>
 <td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/10-ClustSMC.html" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/4352989757a446900b0cfe4cce45e51dcb390985/analysis/10-ClustSMC.Rmd" target="_blank">4352989</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-<td>
-add reclustering of smooth muscle cells
+Added all analysis files
 </td>
 </tr>
 </tbody>
@@ -709,10 +657,7 @@ library(workflowr)
 library(ggplot2)
 library(clustree)
 library(dplyr)</code></pre>
-<pre class="r"><code>source(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R&quot;)
-source(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R&quot;)
-source(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R&quot;)</code></pre>
-<pre class="r"><code>targets &lt;- read.delim(&quot;/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt&quot;,header=TRUE, stringsAsFactors = FALSE)
+<pre class="r"><code>targets &lt;- read.delim(&quot;./data/targets.txt&quot;,header=TRUE, stringsAsFactors = FALSE)
 targets$FileName2 &lt;- paste(targets$FileName,&quot;/&quot;,sep=&quot;&quot;)
 targets$Group_ID2 &lt;- gsub(&quot;LV_&quot;,&quot;&quot;,targets$Group_ID)
 group &lt;- c(&quot;Fetal_1&quot;,&quot;Fetal_2&quot;,&quot;Fetal_3&quot;,
@@ -735,187 +680,33 @@ load(file=&quot;./output/RDataObjects/adultObjs.Rdata&quot;)</code></pre>
 <h1>Set default clustering resolution</h1>
 <pre class="r"><code># Default 0.3
 Idents(fetal.integrated) &lt;- fetal.integrated$integrated_snn_res.0.3
-DimPlot(fetal.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6)+NoLegend()</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-1">
-Past versions of unnamed-chunk-3-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-3-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-3-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<pre class="r"><code># Default 0.3
-DimPlot(young.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6)+NoLegend()</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-2">
-Past versions of unnamed-chunk-3-2.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-3-2" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-3-2.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<pre class="r"><code># Default 0.6
+DimPlot(fetal.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.3
+DimPlot(young.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6)+NoLegend()
+
+# Default 0.6
 DimPlot(adult.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6)+NoLegend()</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-3-3.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-3-3">
-Past versions of unnamed-chunk-3-3.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-3-3" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-3-3.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
 </div>
 <div id="merge-all-data-together" class="section level1">
 <h1>Merge all data together</h1>
 <pre class="r"><code>heart &lt;- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = &quot;heart&quot;)
-table(heart$orig.ident)</code></pre>
-<pre><code>
-adult fetal young 
- 9416 27760 16964 </code></pre>
-<pre class="r"><code>DefaultAssay(object = heart) &lt;- &quot;RNA&quot;</code></pre>
+DefaultAssay(object = heart) &lt;- &quot;RNA&quot;</code></pre>
 </div>
-<div id="get-epicardial-cells-only" class="section level1">
-<h1>Get epicardial cells only</h1>
+<div id="get-smooth-muscle-cells-only" class="section level1">
+<h1>Get smooth muscle cells only</h1>
 <pre class="r"><code>smc &lt;- subset(heart,subset = Broad_celltype == &quot;Smooth muscle cells&quot;)
 dim(smc)</code></pre>
-<pre><code>[1] 17926   430</code></pre>
 </div>
-<div id="filter-out-crappy-cells" class="section level1">
-<h1>Filter out crappy cells</h1>
+<div id="check-for-poor-quality-cells" class="section level1">
+<h1>Check for poor quality cells</h1>
 <p>Check for cells with very low number of uniquely detected genes.</p>
 <pre class="r"><code>par(mfrow=c(1,2))
 plot(density(smc$nFeature_RNA),main=&quot;Number of genes detected&quot;)
 abline(v=500,col=2)
 plot(density(smc$nCount_RNA),main=&quot;Library size&quot;)
 abline(v=2500,col=2)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-6-1">
-Past versions of unnamed-chunk-6-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-6-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-6-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#smc &lt;- subset(smc, subset = nFeature_RNA &gt; 500 &amp; nCount_RNA &gt; 2500)
 dim(smc)</code></pre>
 <pre><code>[1] 17926   430</code></pre>
@@ -943,278 +734,18 @@ smc.integrated &lt;- IntegrateData(anchorset = smc.anchors,dims=1:30)</code></pr
 <pre class="r"><code>smc.integrated &lt;- ScaleData(smc.integrated, verbose = FALSE)
 smc.integrated &lt;- RunPCA(smc.integrated, npcs = 50, verbose = FALSE)
 ElbowPlot(smc.integrated,ndims=50)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/pca-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-pca-1">
-Past versions of pca-1.png
-</button>
-</p>
-<div id="fig-pca-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/pca-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
 <pre class="r"><code>VizDimLoadings(smc.integrated, dims = 1:4, reduction = &quot;pca&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-10-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-10-1">
-Past versions of unnamed-chunk-10-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-10-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-10-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-15-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;pca&quot;,group.by=&quot;orig.ident&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-11-1">
-Past versions of unnamed-chunk-11-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-11-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-11-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;pca&quot;,group.by=&quot;biorep&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-11-2.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-11-2">
-Past versions of unnamed-chunk-11-2.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-11-2" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-11-2.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-16-2.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;pca&quot;,group.by=&quot;sex&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-11-3.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-11-3">
-Past versions of unnamed-chunk-11-3.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-11-3" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-11-3.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-16-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;pca&quot;,group.by=&quot;batch&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-11-4.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-11-4">
-Past versions of unnamed-chunk-11-4.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-11-4" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-11-4.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-16-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimHeatmap(smc.integrated, dims = 1:15, cells = 500, balanced = TRUE)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-12-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-12-1">
-Past versions of unnamed-chunk-12-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-12-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-12-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-17-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#DimHeatmap(smc.integrated, dims = 16:30, cells = 500, balanced = TRUE)
 #DimHeatmap(smc.integrated, dims = 31:45, cells = 500, balanced = TRUE)</code></pre>
 </div>
@@ -1222,15 +753,6 @@ Belinda Phipson
 <h2>Perform nearest neighbours clustering</h2>
 <pre class="r"><code>smc.integrated &lt;- FindNeighbors(smc.integrated, dims = 1:10)
 smc.integrated &lt;- FindClusters(smc.integrated, resolution = 0.1)</code></pre>
-<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.9233
-Number of communities: 3
-Elapsed time: 0 seconds</code></pre>
 <pre class="r"><code>table(Idents(smc.integrated))</code></pre>
 <pre><code>
   0   1   2 
@@ -1239,489 +761,40 @@ Elapsed time: 0 seconds</code></pre>
 par(mar=c(5,4,2,2))
 barplot(table(Idents(smc.integrated)),ylab=&quot;Number of cells&quot;,xlab=&quot;Clusters&quot;)
 title(&quot;Number of cells in each cluster&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-13-1">
-Past versions of unnamed-chunk-13-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-13-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-13-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="visualisation-with-tsne" class="section level2">
 <h2>Visualisation with TSNE</h2>
 <pre class="r"><code>set.seed(10)
 smc.integrated &lt;- RunTSNE(smc.integrated, reduction = &quot;pca&quot;, dims = 1:10)</code></pre>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-14-1">
-Past versions of unnamed-chunk-14-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-14-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-14-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-14-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-22-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>pdf(file=&quot;./output/Figures/tsne-smcALL-res01.pdf&quot;,width=10,height=8,onefile = FALSE)
 DimPlot(smc.integrated, reduction = &quot;tsne&quot;,label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
 dev.off()</code></pre>
-<pre><code>png 
-  2 </code></pre>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, group.by = &quot;orig.ident&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-16-1">
-Past versions of unnamed-chunk-16-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-16-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-16-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-16-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-24-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, split.by = &quot;orig.ident&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-17-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-17-1">
-Past versions of unnamed-chunk-17-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-17-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-17-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-17-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-25-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, group.by = &quot;biorep&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-18-1">
-Past versions of unnamed-chunk-18-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-18-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-18-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-18-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-26-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, group.by = &quot;sex&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-19-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-19-1">
-Past versions of unnamed-chunk-19-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-19-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-19-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-19-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-27-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, split.by = &quot;sex&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-20-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-20-1">
-Past versions of unnamed-chunk-20-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-20-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-20-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-20-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-28-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>DimPlot(smc.integrated, reduction = &quot;tsne&quot;, group.by = &quot;batch&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-21-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-21-1">
-Past versions of unnamed-chunk-21-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-21-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/603b51b464349d9b8fe14bf2c4e9f924fd59ef17/public/figure/10-ClustSMC.Rmd/unnamed-chunk-21-1.png" target="_blank">603b51b</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-31
-</td>
-</tr>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-21-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-29-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>par(mfrow=c(1,1))
 par(mar=c(4,4,2,2))
 tab &lt;- table(Idents(smc.integrated),smc.integrated$biorep)
 barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(9),legend=TRUE)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-22-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-22-1">
-Past versions of unnamed-chunk-22-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-22-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-22-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-30-1.png" width="1152" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>par(mfrow=c(1,1))
 par(mar=c(4,4,2,2))
 tab &lt;- table(Idents(smc.integrated),smc.integrated$orig.ident)
 barplot(t(tab/rowSums(tab)),beside=TRUE,col=ggplotColors(3))
 legend(&quot;topleft&quot;,legend=colnames(tab),fill=ggplotColors(3))</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-23-1.png" width="1152" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-23-1">
-Past versions of unnamed-chunk-23-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-23-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-23-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-31-1.png" width="1152" style="display: block; margin: auto;" /></p>
 </div>
 </div>
 <div id="visualisation-with-clustree" class="section level1">
@@ -1731,358 +804,28 @@ Belinda Phipson
   smc.integrated &lt;- FindClusters(smc.integrated, 
                                    resolution = clusres[i])
 }</code></pre>
-<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.9233
-Number of communities: 3
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.8775
-Number of communities: 3
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.8400
-Number of communities: 4
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.8063
-Number of communities: 4
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.7766
-Number of communities: 5
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.7518
-Number of communities: 5
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.7269
-Number of communities: 6
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.7072
-Number of communities: 7
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.6889
-Number of communities: 7
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.6707
-Number of communities: 8
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.6536
-Number of communities: 8
-Elapsed time: 0 seconds
-Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
-
-Number of nodes: 430
-Number of edges: 13189
-
-Running Louvain algorithm...
-Maximum modularity in 10 random starts: 0.6366
-Number of communities: 8
-Elapsed time: 0 seconds</code></pre>
 <pre class="r"><code>pct.male &lt;- function(x) {mean(x==&quot;m&quot;)}
 pct.female &lt;- function(x) {mean(x==&quot;f&quot;)}
 pct.fetal &lt;- function(x) {mean(x==&quot;fetal&quot;)}
 pct.young &lt;- function(x) {mean(x==&quot;young&quot;)}
 pct.adult &lt;- function(x) {mean(x==&quot;adult&quot;)}</code></pre>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-26-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-26-1">
-Past versions of unnamed-chunk-26-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-26-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-26-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-35-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;,
          node_colour = &quot;sex&quot;, node_colour_aggr = &quot;pct.female&quot;,assay=&quot;RNA&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-27-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-27-1">
-Past versions of unnamed-chunk-27-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-27-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-27-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-36-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;,
          node_colour = &quot;sex&quot;, node_colour_aggr = &quot;pct.male&quot;,assay=&quot;RNA&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-28-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-28-1">
-Past versions of unnamed-chunk-28-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-28-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-28-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-37-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;,
          node_colour = &quot;orig.ident&quot;, node_colour_aggr = &quot;pct.fetal&quot;,assay=&quot;RNA&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-29-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-29-1">
-Past versions of unnamed-chunk-29-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-29-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-29-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-38-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;,
          node_colour = &quot;orig.ident&quot;, node_colour_aggr = &quot;pct.young&quot;,assay=&quot;RNA&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-30-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-30-1">
-Past versions of unnamed-chunk-30-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-30-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-30-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-39-1.png" width="960" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>clustree(smc.integrated, prefix = &quot;integrated_snn_res.&quot;,
          node_colour = &quot;orig.ident&quot;, node_colour_aggr = &quot;pct.adult&quot;,assay=&quot;RNA&quot;)</code></pre>
-<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-31-1.png" width="960" style="display: block; margin: auto;" /></p>
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-31-1">
-Past versions of unnamed-chunk-31-1.png
-</button>
-</p>
-<div id="fig-unnamed-chunk-31-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://git.mcri.edu.au/bioinformatics/porello-heart-snrnaseq/blob/604f664a8e61df9d2631b604489eb3dbae1d7dbf/public/figure/10-ClustSMC.Rmd/unnamed-chunk-31-1.png" target="_blank">604f664</a>
-</td>
-<td>
-Belinda Phipson
-</td>
-<td>
-2019-10-29
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<p><img src="figure/10-ClustSMC.Rmd/unnamed-chunk-40-1.png" width="960" style="display: block; margin: auto;" /></p>
 </div>
 <div id="save-seurat-object" class="section level1">
 <h1>Save Seurat object</h1>
@@ -2100,115 +843,112 @@ load(&quot;./output/RDataObjects/all-counts.Rdata&quot;)</code></pre>
 </p>
 <div id="workflowr-sessioninfo" class="collapse">
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.6.0 (2019-04-26)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: CentOS release 6.7 (Final)
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
 
 Matrix products: default
-BLAS:   /usr/local/installed/R/3.6.0/lib64/R/lib/libRblas.so
-LAPACK: /usr/local/installed/R/3.6.0/lib64/R/lib/libRlapack.so
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
 
 locale:
- [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
- [3] LC_TIME=en_US.UTF-8        LC_COLLATE=C              
- [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
- [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
- [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+[1] en_AU.UTF-8/en_AU.UTF-8/en_AU.UTF-8/C/en_AU.UTF-8/en_AU.UTF-8
 
 attached base packages:
  [1] splines   parallel  stats4    stats     graphics  grDevices utils    
  [8] datasets  methods   base     
 
 other attached packages:
- [1] dplyr_0.8.3                 clustree_0.4.0             
- [3] ggraph_1.0.2                workflowr_1.3.0            
- [5] NMF_0.21.0                  bigmemory_4.5.33           
- [7] cluster_2.1.0               rngtools_1.4               
- [9] pkgmaker_0.27               registry_0.5-1             
-[11] scran_1.12.0                SingleCellExperiment_1.6.0 
-[13] SummarizedExperiment_1.14.1 GenomicRanges_1.36.0       
-[15] GenomeInfoDb_1.20.0         DelayedArray_0.10.0        
-[17] BiocParallel_1.18.1         matrixStats_0.55.0         
-[19] cowplot_1.0.0               monocle_2.12.0             
-[21] DDRTree_0.1.5               irlba_2.3.3                
-[23] VGAM_1.1-1                  ggplot2_3.2.1              
-[25] Matrix_1.2-17               Seurat_3.0.3.9019          
-[27] org.Hs.eg.db_3.8.2          AnnotationDbi_1.46.1       
-[29] IRanges_2.18.1              S4Vectors_0.22.0           
-[31] Biobase_2.44.0              BiocGenerics_0.30.0        
-[33] RColorBrewer_1.1-2          edgeR_3.26.3               
-[35] limma_3.40.2               
+ [1] dplyr_1.0.2                 clustree_0.4.3             
+ [3] ggraph_2.0.4                NMF_0.23.0                 
+ [5] cluster_2.1.0               rngtools_1.5               
+ [7] pkgmaker_0.32.2             registry_0.5-1             
+ [9] scran_1.18.1                SingleCellExperiment_1.12.0
+[11] SummarizedExperiment_1.20.0 GenomicRanges_1.42.0       
+[13] GenomeInfoDb_1.26.1         DelayedArray_0.16.0        
+[15] MatrixGenerics_1.2.0        matrixStats_0.57.0         
+[17] cowplot_1.1.0               monocle_2.18.0             
+[19] DDRTree_0.1.5               irlba_2.3.3                
+[21] VGAM_1.1-4                  ggplot2_3.3.2              
+[23] Matrix_1.2-18               Seurat_3.2.2               
+[25] org.Hs.eg.db_3.12.0         AnnotationDbi_1.52.0       
+[27] IRanges_2.24.0              S4Vectors_0.28.0           
+[29] Biobase_2.50.0              BiocGenerics_0.36.0        
+[31] RColorBrewer_1.1-2          edgeR_3.32.0               
+[33] limma_3.46.0                workflowr_1.6.2            
 
 loaded via a namespace (and not attached):
-  [1] reticulate_1.13          R.utils_2.9.0           
-  [3] tidyselect_0.2.5         RSQLite_2.1.2           
-  [5] htmlwidgets_1.5          grid_3.6.0              
-  [7] combinat_0.0-8           docopt_0.6.1            
-  [9] Rtsne_0.15               munsell_0.5.0           
- [11] codetools_0.2-16         ica_1.0-2               
- [13] statmod_1.4.30           future_1.14.0           
- [15] withr_2.1.2              colorspace_1.4-1        
- [17] fastICA_1.2-2            knitr_1.25              
- [19] ROCR_1.0-7               gbRd_0.4-11             
- [21] listenv_0.7.0            labeling_0.3            
- [23] Rdpack_0.11-0            git2r_0.26.1            
- [25] slam_0.1-45              GenomeInfoDbData_1.2.1  
- [27] polyclip_1.10-0          farver_1.1.0            
- [29] bit64_0.9-7              pheatmap_1.0.12         
- [31] rprojroot_1.3-2          vctrs_0.2.0             
- [33] xfun_0.10                R6_2.4.0                
- [35] doParallel_1.0.15        ggbeeswarm_0.6.0        
- [37] rsvd_1.0.2               locfit_1.5-9.1          
- [39] bitops_1.0-6             assertthat_0.2.1        
- [41] SDMTools_1.1-221.1       scales_1.0.0            
- [43] beeswarm_0.2.3           gtable_0.3.0            
- [45] npsurv_0.4-0             globals_0.12.4          
- [47] tidygraph_1.1.2          rlang_0.4.0             
- [49] zeallot_0.1.0            lazyeval_0.2.2          
- [51] checkmate_1.9.4          yaml_2.2.0              
- [53] reshape2_1.4.3           backports_1.1.5         
- [55] tools_3.6.0              gridBase_0.4-7          
- [57] gplots_3.0.1.1           dynamicTreeCut_1.63-1   
- [59] ggridges_0.5.1           Rcpp_1.0.2              
- [61] plyr_1.8.4               zlibbioc_1.30.0         
- [63] purrr_0.3.2              RCurl_1.95-4.12         
- [65] densityClust_0.3         pbapply_1.4-1           
- [67] viridis_0.5.1            zoo_1.8-6               
- [69] ggrepel_0.8.1            fs_1.3.1                
- [71] magrittr_1.5             data.table_1.12.4       
- [73] lmtest_0.9-37            RANN_2.6.1              
- [75] whisker_0.3-2            fitdistrplus_1.0-14     
- [77] lsei_1.2-0               evaluate_0.14           
- [79] xtable_1.8-4             sparsesvd_0.1-4         
- [81] gridExtra_2.3            HSMMSingleCell_1.4.0    
- [83] compiler_3.6.0           scater_1.12.2           
- [85] tibble_2.1.3             KernSmooth_2.23-15      
- [87] crayon_1.3.4             R.oo_1.22.0             
- [89] htmltools_0.4.0          tidyr_0.8.3             
- [91] DBI_1.0.0                tweenr_1.0.1            
- [93] MASS_7.3-51.4            R.methodsS3_1.7.1       
- [95] gdata_2.18.0             metap_1.1               
- [97] igraph_1.2.4.1           pkgconfig_2.0.3         
- [99] bigmemory.sri_0.1.3      plotly_4.9.0            
-[101] foreach_1.4.7            vipor_0.4.5             
-[103] dqrng_0.2.1              XVector_0.24.0          
-[105] bibtex_0.4.2             stringr_1.4.0           
-[107] digest_0.6.21            sctransform_0.2.0       
-[109] RcppAnnoy_0.0.12         tsne_0.1-3              
-[111] rmarkdown_1.14           DelayedMatrixStats_1.6.0
-[113] gtools_3.8.1             nlme_3.1-141            
-[115] jsonlite_1.6             BiocNeighbors_1.2.0     
-[117] viridisLite_0.3.0        pillar_1.4.2            
-[119] lattice_0.20-38          httr_1.4.1              
-[121] survival_2.44-1.1        glue_1.3.1              
-[123] qlcMatrix_0.9.7          FNN_1.1.3               
-[125] png_0.1-7                iterators_1.0.12        
-[127] bit_1.1-14               ggforce_0.3.0           
-[129] stringi_1.4.3            blob_1.2.0              
-[131] BiocSingular_1.0.0       caTools_1.17.1.2        
-[133] memoise_1.1.0            future.apply_1.3.0      
-[135] ape_5.3                 </code></pre>
+  [1] reticulate_1.18           tidyselect_1.1.0         
+  [3] RSQLite_2.2.1             htmlwidgets_1.5.2        
+  [5] grid_4.0.2                combinat_0.0-8           
+  [7] docopt_0.7.1              BiocParallel_1.24.1      
+  [9] Rtsne_0.15                munsell_0.5.0            
+ [11] codetools_0.2-18          ica_1.0-2                
+ [13] statmod_1.4.35            future_1.20.1            
+ [15] miniUI_0.1.1.1            withr_2.3.0              
+ [17] colorspace_2.0-0          fastICA_1.2-2            
+ [19] knitr_1.30                rstudioapi_0.13          
+ [21] ROCR_1.0-11               tensor_1.5               
+ [23] listenv_0.8.0             labeling_0.4.2           
+ [25] git2r_0.27.1              slam_0.1-47              
+ [27] GenomeInfoDbData_1.2.4    polyclip_1.10-0          
+ [29] farver_2.0.3              bit64_4.0.5              
+ [31] pheatmap_1.0.12           rprojroot_2.0.2          
+ [33] parallelly_1.21.0         vctrs_0.3.5              
+ [35] generics_0.1.0            xfun_0.19                
+ [37] R6_2.5.0                  doParallel_1.0.16        
+ [39] graphlayouts_0.7.1        rsvd_1.0.3               
+ [41] locfit_1.5-9.4            bitops_1.0-6             
+ [43] spatstat.utils_1.17-0     assertthat_0.2.1         
+ [45] promises_1.1.1            scales_1.1.1             
+ [47] gtable_0.3.0              beachmat_2.6.2           
+ [49] globals_0.14.0            goftest_1.2-2            
+ [51] tidygraph_1.2.0           rlang_0.4.9              
+ [53] lazyeval_0.2.2            checkmate_2.0.0          
+ [55] yaml_2.2.1                reshape2_1.4.4           
+ [57] abind_1.4-5               backports_1.2.0          
+ [59] httpuv_1.5.4              tools_4.0.2              
+ [61] gridBase_0.4-7            ellipsis_0.3.1           
+ [63] ggridges_0.5.2            Rcpp_1.0.5               
+ [65] plyr_1.8.6                sparseMatrixStats_1.2.0  
+ [67] zlibbioc_1.36.0           purrr_0.3.4              
+ [69] RCurl_1.98-1.2            densityClust_0.3         
+ [71] rpart_4.1-15              deldir_0.2-3             
+ [73] pbapply_1.4-3             viridis_0.5.1            
+ [75] zoo_1.8-8                 ggrepel_0.8.2            
+ [77] fs_1.5.0                  magrittr_2.0.1           
+ [79] data.table_1.13.2         lmtest_0.9-38            
+ [81] RANN_2.6.1                whisker_0.4              
+ [83] fitdistrplus_1.1-1        patchwork_1.1.0          
+ [85] mime_0.9                  evaluate_0.14            
+ [87] xtable_1.8-4              sparsesvd_0.2            
+ [89] gridExtra_2.3             HSMMSingleCell_1.10.0    
+ [91] compiler_4.0.2            tibble_3.0.4             
+ [93] KernSmooth_2.23-18        crayon_1.3.4             
+ [95] htmltools_0.5.0           mgcv_1.8-33              
+ [97] later_1.1.0.1             tidyr_1.1.2              
+ [99] DBI_1.1.0                 tweenr_1.0.1             
+[101] MASS_7.3-53               igraph_1.2.6             
+[103] pkgconfig_2.0.3           plotly_4.9.2.1           
+[105] scuttle_1.0.3             foreach_1.5.1            
+[107] dqrng_0.2.1               XVector_0.30.0           
+[109] stringr_1.4.0             digest_0.6.27            
+[111] sctransform_0.3.1         RcppAnnoy_0.0.17         
+[113] spatstat.data_1.5-2       rmarkdown_2.5            
+[115] leiden_0.3.5              uwot_0.1.9               
+[117] DelayedMatrixStats_1.12.1 shiny_1.5.0              
+[119] lifecycle_0.2.0           nlme_3.1-150             
+[121] jsonlite_1.7.1            BiocNeighbors_1.8.1      
+[123] viridisLite_0.3.0         pillar_1.4.7             
+[125] lattice_0.20-41           fastmap_1.0.1            
+[127] httr_1.4.2                survival_3.2-7           
+[129] glue_1.4.2                qlcMatrix_0.9.7          
+[131] FNN_1.1.3                 spatstat_1.64-1          
+[133] png_0.1-7                 iterators_1.0.13         
+[135] bluster_1.0.0             bit_4.0.4                
+[137] ggforce_0.3.2             stringi_1.5.3            
+[139] blob_1.2.1                BiocSingular_1.6.0       
+[141] memoise_1.1.0             future.apply_1.6.0       </code></pre>
 </div>
 </div>
 
@@ -2235,7 +975,7 @@ footer is added to webpages before the MathJax javascript. -->
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -2274,7 +1014,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0
