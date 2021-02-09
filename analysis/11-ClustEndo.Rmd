@@ -34,14 +34,14 @@ library(clustree)
 library(dplyr)
 ```
 
-```{r}
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/normCounts.R")
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/findModes.R")
-source("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/code/ggplotColors.R")
+```{r echo=FALSE}
+source("/Users/phipsonbelinda/Documents/MCRI_collab/Porrello/Human_Development_snRNAseq/code/normCounts.R")
+source("/Users/phipsonbelinda/Documents/MCRI_collab/Porrello/Human_Development_snRNAseq/code/findModes.R")
+source("/Users/phipsonbelinda/Documents/MCRI_collab/Porrello/Human_Development_snRNAseq/code/ggplotColors.R")
 ```
 
 ```{r readTargets}
-targets <- read.delim("/misc/card2-single_cell_nuclei_rnaseq/Porello-heart-snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets <- read.delim("/Users/phipsonbelinda/Documents/MCRI_collab/Porrello/Human_Development_snRNAseq/data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
 targets$FileName2 <- paste(targets$FileName,"/",sep="")
 targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
 group <- c("Fetal_1","Fetal_2","Fetal_3",
@@ -53,20 +53,20 @@ m <- match(group, targets$Group_ID2)
 targets <- targets[m,]
 ```
 
-```{r readData}
-fetal.integrated <- readRDS(file="./output/RDataObjects/fetal-int.Rds")
-load(file="./output/RDataObjects/fetalObjs.Rdata")
+```{r eval=FALSE}
+fetal.integrated <- readRDS(file="./output/fetal-int.Rds")
+load(file="./output/fetalObjs.Rdata")
 
-young.integrated <- readRDS(file="./output/RDataObjects/young-int.Rds")
-load(file="./output/RDataObjects/youngObjs.Rdata")
+young.integrated <- readRDS(file="./output/young-int.Rds")
+load(file="./output/youngObjs.Rdata")
 
-adult.integrated <- readRDS(file="./output/RDataObjects/adult-int.Rds")
-load(file="./output/RDataObjects/adultObjs.Rdata")
+adult.integrated <- readRDS(file="./output/adult-int.Rds")
+load(file="./output/adultObjs.Rdata")
 ```
 
 # Set default clustering resolution
 
-```{r}
+```{r eval=FALSE}
 # Default 0.3
 Idents(fetal.integrated) <- fetal.integrated$integrated_snn_res.0.3
 DimPlot(fetal.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend()
@@ -81,17 +81,21 @@ DimPlot(adult.integrated, reduction = "tsne",label=TRUE,label.size = 6)+NoLegend
 
 # Merge all data together
 
-```{r}
+```{r eval=FALSE}
 heart <- merge(fetal.integrated, y = c(young.integrated, adult.integrated), project = "heart")
 table(heart$orig.ident)
 DefaultAssay(object = heart) <- "RNA"
 ```
 
-# Get epicardial cells only
+# Get endothelial cells only
 
-```{r}
+```{r eval=FALSE}
 endo <- subset(heart,subset = Broad_celltype == "Endothelial cells")
 dim(endo)
+```
+
+```{r echo=FALSE}
+endo <- readRDS(file="./output/endo-int-FYA-filtered.Rds")
 ```
 
 # Check for poor quality cells
@@ -114,33 +118,41 @@ table(endo$biorep)
 # Run new integration with SCtransform normalisation
 
 
-```{r}
+```{r eval=FALSE}
 endo.list <- SplitObject(endo, split.by = "biorep")
 ```
 
-```{r}
+```{r eval=FALSE}
 for (i in 1:length(endo.list)) {
     endo.list[[i]] <- SCTransform(endo.list[[i]], verbose = FALSE)
 }
 ```
 
-```{r findanchors}
+```{r eval=FALSE}
 kf <- min(sapply(endo.list, ncol))
 endo.anchors <- FindIntegrationAnchors(object.list = endo.list, dims=1:30,anchor.features = 3000,k.filter=kf)
 endo.integrated <- IntegrateData(anchorset = endo.anchors,dims=1:30)
 ```
 
+```{r echo=FALSE}
+endo.integrated <- endo
+```
+
+
 # Perform clustering
 
-```{r}
+```{r eval=TRUE}
 DefaultAssay(object = endo.integrated) <- "integrated"
 ```
 
 ## Perform scaling and PCA
 
-```{r pca}
+```{r eval=FALSE}
 endo.integrated <- ScaleData(endo.integrated, verbose = FALSE)
 endo.integrated <- RunPCA(endo.integrated, npcs = 50, verbose = FALSE)
+```
+
+```{r}
 ElbowPlot(endo.integrated,ndims=50)
 ```
 
@@ -163,9 +175,12 @@ DimHeatmap(endo.integrated, dims = 16:30, cells = 500, balanced = TRUE)
 
 ## Perform nearest neighbours clustering
 
-```{r clust}
+```{r eval=FALSE}
 endo.integrated <- FindNeighbors(endo.integrated, dims = 1:20)
 endo.integrated <- FindClusters(endo.integrated, resolution = 0.1)
+```
+
+```{r}
 table(Idents(endo.integrated))
 ```
 
@@ -179,7 +194,7 @@ title("Number of cells in each cluster")
 
 ## Visualisation with TSNE
 
-```{r tsne}
+```{r eval=FALSE}
 set.seed(10)
 endo.integrated <- RunTSNE(endo.integrated, reduction = "pca", dims = 1:20)
 ```
@@ -189,7 +204,7 @@ endo.integrated <- RunTSNE(endo.integrated, reduction = "pca", dims = 1:20)
 DimPlot(endo.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
 ```
 
-```{r}
+```{r eval=FALSE}
 pdf(file="./output/Figures/tsne-endoALL-res01.pdf",width=10,height=8,onefile = FALSE)
 DimPlot(endo.integrated, reduction = "tsne",label=TRUE,label.size = 6,pt.size = 0.5)+NoLegend()
 dev.off()
@@ -241,7 +256,7 @@ legend("topleft",legend=colnames(tab),fill=ggplotColors(3))
 ```{r}
 clusres <- c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1,1.2)
 ```
-```{r clustree}
+```{r eval=FALSE}
 for(i in 1:length(clusres)){
   endo.integrated <- FindClusters(endo.integrated, 
                                    resolution = clusres[i])
@@ -294,11 +309,11 @@ Idents(endo.integrated) <- endo.integrated$integrated_snn_res.0.1
 ```
 
 ```{r}
-saveRDS(endo.integrated,file="./output/RDataObjects/endo-int-FYA-filtered.Rds")
+# saveRDS(endo.integrated,file="./output/RDataObjects/endo-int-FYA-filtered.Rds")
 #endo.integrated <- readRDS(file="./output/RDataObjects/endo-int-FYA.Rds")
 ```
 
 ```{r}
 # Load unfiltered counts matrix for every sample (object all)
-load("./output/RDataObjects/all-counts.Rdata")
+#load("./output/RDataObjects/all-counts.Rdata")
 ```

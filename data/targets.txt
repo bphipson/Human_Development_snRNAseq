@@ -1,0 +1,14 @@
+SampleID	Group_ID	Sex	Age	Disease	Group	Batch	Age2	FileName
+6565	LV_Fetal_2	Male	E19w	Healthy	Fetal	1	0.475	/misc/card2-single_cell_nuclei_rnaseq/20190412_ES_MCRI_run1/seqaln/merge/M6565_merge/outs/filtered_feature_bc_matrix
+0073-6	LV_Young_1	Male	4y	Healthy	Child	1	4	/misc/card2-single_cell_nuclei_rnaseq/20190412_ES_MCRI_run1/seqaln/merge/M0073_merge/outs/filtered_feature_bc_matrix
+0036-17	LV_Adult_3	Male	42y	Healthy	Adult	1	42	/misc/card2-single_cell_nuclei_rnaseq/20190412_ES_MCRI_run1/seqaln/merge/M0036_merge/outs/filtered_feature_bc_matrix
+0093-2	LV_Diseased_3	Female	9y	SIDC	DCM	1	9	/misc/card2-single_cell_nuclei_rnaseq/20190412_ES_MCRI_run1/seqaln/merge/F0093_merge/outs/filtered_feature_bc_matrix
+6569	LV_Fetal_1	Male	E19w	Healthy	Fetal	2	0.475	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_fetal_1_merge/outs/filtered_feature_bc_matrix
+6572	LV_Fetal_3	Female	E20w	Healthy	Fetal	2	0.5	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_fetal_3_merge/outs/filtered_feature_bc_matrix
+0001-2	LV_Young_2	Female	10y	Healthy	Child	2	10	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_young_2_merge/outs/filtered_feature_bc_matrix
+0051-7	LV_Young_3	Male	14y	Healthy	Child	2	14	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_young_3_merge_redo/outs/filtered_feature_bc_matrix
+0079-3	LV_Adult_1	Female	35y	Healthy	Adult	2	35	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_adult_1_merge/outs/filtered_feature_bc_matrix
+0026-3	LV_Adult_2	Male	41y	Healthy	Adult	2	41	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_adult_2_merge/outs/filtered_feature_bc_matrix
+0050-14	LV_Diseased_1	Male	5y	DC	DCM	2	5	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_diseased_1_merge_redo/outs/filtered_feature_bc_matrix
+0019-2	LV_Diseased_2	Female	10y10m	DC	DCM	2	10.83	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_diseased_2_merge/outs/filtered_feature_bc_matrix
+0025-13	LV_Diseased_4	Female	10 y 10 m	DC	DCM	2	10.83	/misc/card2-single_cell_nuclei_rnaseq/20190523_ES_MCRI_run2/seqaln/merge/LV_diseased_4_merge/outs/filtered_feature_bc_matrix
