@@ -59,6 +59,6 @@ listed below.
     
 ## Differential proportions analysis with propeller
 
-* [Differential proportions analysis](06-Celltype-Composition.html) 
+* [Differential proportions analysis](06a-DAanalysis.html) 
 
 
