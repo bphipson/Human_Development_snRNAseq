@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Belinda Phipson" />
+
+<meta name="date" content="2021-10-02" />
+
+<title>Marker analysis of broad cell types</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/anchor-sections-1.0/anchor-sections.css" rel="stylesheet" />
+<script src="site_libs/anchor-sections-1.0/anchor-sections.js"></script>
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Human_Development_snRNAseq</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/bphipson/Human_Development_snRNAseq">
+    <span class="fa fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Marker analysis of broad cell types</h1>
+<h4 class="author">Belinda Phipson</h4>
+<h4 class="date">10/02/2021</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-02-10
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>Human_Development_snRNAseq/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200812code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200812)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200812code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200812)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcombphipsonHumanDevelopmentsnRNAseqtree84a97c7b3fd462d55fada557066238bfac2d6b04targetblank84a97c7a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/bphipson/Human_Development_snRNAseq/tree/84a97c7b3fd462d55fada557066238bfac2d6b04" target="_blank">84a97c7</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcombphipsonHumanDevelopmentsnRNAseqtree84a97c7b3fd462d55fada557066238bfac2d6b04targetblank84a97c7a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/bphipson/Human_Development_snRNAseq/tree/84a97c7b3fd462d55fada557066238bfac2d6b04" target="_blank">84a97c7</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    data/.DS_Store
+
+Untracked files:
+    Untracked:  analysis/14-MarkerAnalysisBCT.Rmd
+    Untracked:  data/adult-clust.txt
+    Untracked:  data/cellinfoALL.Rdata
+    Untracked:  data/dcm-clust.txt
+    Untracked:  data/fetal-clust.txt
+    Untracked:  data/gstlist-adult.Rdata
+    Untracked:  data/gstlist-dcm-res03.Rdata
+    Untracked:  data/gstlist-dcm.Rdata
+    Untracked:  data/gstlist-fetal.Rdata
+    Untracked:  data/gstlist-young.Rdata
+    Untracked:  data/heart-markers-long.txt
+    Untracked:  data/immune-markers-long.txt
+    Untracked:  data/pseudobulk.Rds
+    Untracked:  data/targets_pools.txt
+    Untracked:  data/young-clust.txt
+    Untracked:  output/adult-int.Rds
+    Untracked:  output/adultObjs.Rdata
+    Untracked:  output/all-counts.Rdata
+    Untracked:  output/bct-treat-all.RData
+    Untracked:  output/endo-int-FYA-filtered.Rds
+    Untracked:  output/fetal-int.Rds
+    Untracked:  output/fetalObjs.Rdata
+    Untracked:  output/heart-int-FYA.Rds
+    Untracked:  output/heartFYA.Rds
+    Untracked:  output/human_c2_v5p2.rdata
+    Untracked:  output/immune-int-FYA-filtered.Rds
+    Untracked:  output/intermediateObs.Rdata
+    Untracked:  output/neuron-int-FYA-filtered.Rds
+    Untracked:  output/smc-int-FYA-filtered.Rds
+    Untracked:  output/young-int.Rds
+    Untracked:  output/youngObjs.Rdata
+
+Unstaged changes:
+    Modified:   analysis/06-Celltype-Composition.Rmd
+    Modified:   analysis/15-MarkerAnalysisBCT.Rmd
+    Modified:   analysis/index.Rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+<p>
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
+</p>
+<hr>
+</div>
+</div>
+</div>
+<div id="load-libraries-and-functions" class="section level1">
+<h1>Load libraries and functions</h1>
+<pre class="r"><code>library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+library(gridBase)
+library(grid)
+library(speckle)</code></pre>
+</div>
+<div id="read-in-the-data-objects" class="section level1">
+<h1>Read in the data objects</h1>
+<pre class="r"><code>targets &lt;- read.delim(&quot;./data/targets.txt&quot;,header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 &lt;- paste(targets$FileName,&quot;/&quot;,sep=&quot;&quot;)
+targets$Group_ID2 &lt;- gsub(&quot;LV_&quot;,&quot;&quot;,targets$Group_ID)
+group &lt;- c(&quot;Fetal_1&quot;,&quot;Fetal_2&quot;,&quot;Fetal_3&quot;,
+           &quot;Young_1&quot;,&quot;Young_2&quot;,&quot;Young_3&quot;,
+           &quot;Adult_1&quot;,&quot;Adult_2&quot;,&quot;Adult_3&quot;, 
+           &quot;Diseased_1&quot;,&quot;Diseased_2&quot;,
+           &quot;Diseased_3&quot;,&quot;Diseased_4&quot;)
+m &lt;- match(group, targets$Group_ID2)
+targets &lt;- targets[m,]</code></pre>
+<pre class="r"><code># Load unfiltered counts matrix for every sample (object all)
+load(&quot;./output/all-counts.Rdata&quot;)</code></pre>
+<pre class="r"><code>heart &lt;- readRDS(file=&quot;./output/heartFYA.Rds&quot;)</code></pre>
+<pre class="r"><code>heart$Broad_celltype &lt;- factor(heart$Broad_celltype,
+              levels=c(&quot;Cardiomyocytes&quot;,&quot;Fibroblast&quot;,&quot;Endothelial cells&quot;,
+                       &quot;Immune cells&quot;,&quot;Epicardial cells&quot;,&quot;Neurons&quot;,
+                       &quot;Smooth muscle cells&quot;,&quot;Erythroid&quot;))
+heart$biorep &lt;- factor(heart$biorep,levels=c(&quot;f1&quot;,&quot;f2&quot;,&quot;f3&quot;,&quot;y1&quot;,&quot;y2&quot;,&quot;y3&quot;,&quot;a1&quot;,&quot;a2&quot;,&quot;a3&quot;))
+table(heart$biorep,heart$Broad_celltype)
+
+all.bct &lt;- factor(heart$Broad_celltype,
+              levels=c(&quot;Cardiomyocytes&quot;,&quot;Fibroblast&quot;,&quot;Endothelial cells&quot;,
+                       &quot;Immune cells&quot;,&quot;Epicardial cells&quot;,&quot;Neurons&quot;,
+                       &quot;Smooth muscle cells&quot;,&quot;Erythroid&quot;))
+sample &lt;- heart$biorep</code></pre>
+<pre class="r"><code>m &lt;- match(colnames(heart),colnames(all))
+all.counts &lt;- all[,m]</code></pre>
+</div>
+<div id="get-gene-annotation-and-perform-filtering" class="section level1">
+<h1>Get gene annotation and perform filtering</h1>
+<pre class="r"><code>columns(org.Hs.eg.db)
+ann &lt;- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(all.counts),columns=c(&quot;SYMBOL&quot;,&quot;ENTREZID&quot;,&quot;ENSEMBL&quot;,&quot;GENENAME&quot;,&quot;CHR&quot;),keytype = &quot;SYMBOL&quot;)
+m &lt;- match(rownames(all.counts),ann$SYMBOL)
+ann &lt;- ann[m,]</code></pre>
+<pre class="r"><code>mito &lt;- grep(&quot;mitochondrial&quot;,ann$GENENAME)
+ribo &lt;- grep(&quot;ribosomal&quot;,ann$GENENAME)
+missingEZID &lt;- which(is.na(ann$ENTREZID))</code></pre>
+<pre class="r"><code>chuck &lt;- unique(c(mito,ribo,missingEZID))
+all.counts.keep &lt;- all.counts[-chuck,]
+ann.keep &lt;- ann[-chuck,]</code></pre>
+<pre class="r"><code>numzero.genes &lt;- rowSums(all.counts.keep==0)
+keep.genes &lt;- numzero.genes &lt; (ncol(all.counts.keep)-20)
+all.keep &lt;- all.counts.keep[keep.genes,]
+ann.keep.all &lt;- ann.keep[keep.genes,]</code></pre>
+</div>
+<div id="limma-analysis" class="section level1">
+<h1>Limma analysis</h1>
+<pre class="rm"><code>logcounts.all &lt;- normCounts(all.keep,log=TRUE,prior.count=0.5)
+
+design &lt;- model.matrix(~0+all.bct+sample)
+colnames(design)[1:(length(levels(all.bct)))] &lt;- levels(all.bct)
+
+mycont &lt;- matrix(0,ncol=length(levels(all.bct)),nrow=length(levels(all.bct)))
+colnames(mycont)&lt;-levels(all.bct)
+diag(mycont)&lt;-1
+mycont[upper.tri(mycont)]&lt;- -1/(length(levels(all.bct))-1)
+mycont[lower.tri(mycont)]&lt;- -1/(length(levels(all.bct))-1)
+
+# Fill out remaining rows with 0s
+zero.rows &lt;- matrix(0,ncol=length(levels(all.bct)),nrow=(ncol(design)-length(levels(all.bct))))
+test &lt;- rbind(mycont,zero.rows)
+
+fit &lt;- lmFit(logcounts.all,design)
+fit.cont &lt;- contrasts.fit(fit,contrasts=test)
+fit.cont &lt;- eBayes(fit.cont,trend=TRUE,robust=TRUE)
+
+fit.cont$genes &lt;- ann.keep.all
+
+treat.all &lt;- treat(fit.cont,lfc=0.5)</code></pre>
+<pre class="r"><code>dt &lt;- decideTests(treat.all)
+summary(dt)</code></pre>
+<pre><code>       Cardiomyocytes Fibroblast Endothelial cells Immune cells
+Down              323        207               418          610
+NotSig          18056      18314             18407        17783
+Up                822        680               376          808
+       Epicardial cells Neurons Smooth muscle cells Erythroid
+Down                125     261                  79      1493
+NotSig            18512   18392               18627     17340
+Up                  564     548                 495       368</code></pre>
+<pre class="r"><code>par(mfrow=c(3,3))
+par(mar=c(5,5,2,2))
+for(i in 1:ncol(treat.all)){
+  plotMD(treat.all,coef=i,status = dt[,i],hl.cex=0.5)
+  abline(h=0,col=colours()[c(226)])
+  lines(lowess(treat.all$Amean,treat.all$coefficients[,i]),lwd=1.5,col=4)
+}</code></pre>
+<p><img src="figure/14-MarkerAnalysisBCT.Rmd/unnamed-chunk-13-1.png" width="960" style="display: block; margin: auto;" /></p>
+</div>
+<div id="dotplot-to-visualise-marker-genes" class="section level1">
+<h1>DotPlot to visualise marker genes</h1>
+<pre class="r"><code>heart &lt;- readRDS(&quot;./output/heartFYA.Rds&quot;)</code></pre>
+<pre class="r"><code>DefaultAssay(heart) &lt;- &quot;RNA&quot;
+
+sig.genes &lt;- gene.label &lt;- vector(&quot;list&quot;, ncol(treat.all))
+for(i in 1:length(sig.genes)){
+  top &lt;- topTreat(treat.all,coef=i,n=Inf,sort.by=&quot;t&quot;)
+  sig.genes[[i]] &lt;- rownames(top)[top$logFC&gt;0][1:10]
+  gene.label[[i]] &lt;- paste(rownames(top)[top$logFC&gt;0][1:10],colnames(treat.all)[i],sep=&quot;-&quot;)
+} 
+
+csig &lt;- unlist(sig.genes)
+genes &lt;- unlist(gene.label)
+
+missing &lt;- is.na(match(csig,rownames(heart)))
+
+csig2 &lt;- csig[!missing]
+
+gene.cols &lt;- rep(c(ggplotColors(7),&quot;grey&quot;),each=10)
+gene.cols &lt;- gene.cols[!missing]
+
+d &lt;- duplicated(csig2)
+csig2 &lt;- csig2[!d]
+gene.cols &lt;- gene.cols[!d]</code></pre>
+<pre class="r"><code>DotPlot(heart,features=unique(csig2),group.by=&quot;Broad_celltype&quot;,cols = c(&quot;lightgrey&quot;, &quot;red&quot;))+RotatedAxis() + FontSize(y.text = 8, x.text=14) + labs(y=element_blank(),x=element_blank()) + coord_flip() + theme(axis.text.y = element_text(color=(gene.cols)))</code></pre>
+<p><img src="figure/14-MarkerAnalysisBCT.Rmd/unnamed-chunk-16-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<div id="perform-gene-set-testing-on-reactome-sets" class="section level2">
+<h2>Perform gene set testing on reactome sets</h2>
+<pre class="r"><code>load(&quot;./output/human_c2_v5p2.rdata&quot;)
+c2.id &lt;- ids2indices(Hs.c2,treat.all$genes$ENTREZID)
+reactome.id &lt;-c2.id[grep(&quot;REACTOME&quot;,names(c2.id))]</code></pre>
+<div id="reactome-figures---cardio" class="section level3">
+<h3>Reactome figures - cardio</h3>
+<pre class="r"><code>cardio.camera &lt;- cameraPR(treat.all$t[,1],reactome.id)
+cardio.camera.up &lt;- cardio.camera[cardio.camera[,2]==&quot;Up&quot;,]
+
+fibro.camera &lt;- cameraPR(treat.all$t[,2],reactome.id)
+fibro.camera.up &lt;- fibro.camera[fibro.camera[,2]==&quot;Up&quot;,]
+
+endo.camera &lt;- cameraPR(treat.all$t[,3],reactome.id)
+endo.camera.up &lt;- endo.camera[endo.camera[,2]==&quot;Up&quot;,]
+
+immune.camera &lt;- cameraPR(treat.all$t[,4],reactome.id)
+immune.camera.up &lt;- immune.camera[immune.camera[,2]==&quot;Up&quot;,]
+
+epic.camera &lt;- cameraPR(treat.all$t[,5],reactome.id)
+epic.camera.up &lt;- epic.camera[epic.camera[,2]==&quot;Up&quot;,]
+
+neuron.camera &lt;- cameraPR(treat.all$t[,6],reactome.id)
+neuron.camera.up &lt;- neuron.camera[neuron.camera[,2]==&quot;Up&quot;,]
+
+smc.camera &lt;- cameraPR(treat.all$t[,7],reactome.id)
+smc.camera.up &lt;- smc.camera[smc.camera[,2]==&quot;Up&quot;,]
+
+eryth.camera &lt;- cameraPR(treat.all$t[,8],reactome.id)
+eryth.camera.up &lt;- eryth.camera[eryth.camera[,2]==&quot;Up&quot;,]
+
+nsets &lt;- 5
+all.cam &lt;- rbind(cardio.camera.up[1:nsets,], fibro.camera.up[1:nsets,],
+                       endo.camera.up[1:nsets,],immune.camera.up[1:nsets,],
+                       epic.camera.up[1:nsets,],neuron.camera.up[1:nsets,],
+                       smc.camera.up[1:nsets,],eryth.camera.up[1:nsets,])
+
+scores &lt;- -log10(all.cam$PValue)
+names(scores) &lt;- rownames(all.cam)
+names(scores) &lt;- gsub(&quot;REACTOME_&quot;,&quot;&quot;,names(scores))</code></pre>
+<pre class="r"><code>par(mfrow=c(1,1))
+par(mar=c(5,41,3,2))
+barplot(scores[length(scores):1],horiz = T,las=2,col=rev(rep(c(ggplotColors(7),&quot;grey&quot;),each=nsets)),cex.names=0.9,
+        cex.axis = 1.5,xlab=&quot;-log10(PValue)&quot;,cex.lab=1.5)
+abline(v= -log10(0.05),lty=2)</code></pre>
+<p><img src="figure/14-MarkerAnalysisBCT.Rmd/unnamed-chunk-19-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.2 (2020-06-22)
+Platform: x86_64-apple-darwin17.0 (64-bit)
+Running under: macOS Catalina 10.15.7
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRblas.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_AU.UTF-8/en_AU.UTF-8/en_AU.UTF-8/C/en_AU.UTF-8/en_AU.UTF-8
+
+attached base packages:
+ [1] grid      splines   parallel  stats4    stats     graphics  grDevices
+ [8] utils     datasets  methods   base     
+
+other attached packages:
+ [1] speckle_0.0.2               gridBase_0.4-7             
+ [3] dplyr_1.0.2                 clustree_0.4.3             
+ [5] ggraph_2.0.4                NMF_0.23.0                 
+ [7] cluster_2.1.0               rngtools_1.5               
+ [9] pkgmaker_0.32.2             registry_0.5-1             
+[11] scran_1.18.1                SingleCellExperiment_1.12.0
+[13] SummarizedExperiment_1.20.0 GenomicRanges_1.42.0       
+[15] GenomeInfoDb_1.26.1         DelayedArray_0.16.0        
+[17] MatrixGenerics_1.2.0        matrixStats_0.57.0         
+[19] cowplot_1.1.0               monocle_2.18.0             
+[21] DDRTree_0.1.5               irlba_2.3.3                
+[23] VGAM_1.1-4                  ggplot2_3.3.2              
+[25] Matrix_1.2-18               Seurat_3.2.2               
+[27] org.Hs.eg.db_3.12.0         AnnotationDbi_1.52.0       
+[29] IRanges_2.24.0              S4Vectors_0.28.0           
+[31] Biobase_2.50.0              BiocGenerics_0.36.0        
+[33] RColorBrewer_1.1-2          edgeR_3.32.0               
+[35] limma_3.46.0                workflowr_1.6.2            
+
+loaded via a namespace (and not attached):
+  [1] reticulate_1.18           tidyselect_1.1.0         
+  [3] RSQLite_2.2.1             htmlwidgets_1.5.2        
+  [5] combinat_0.0-8            docopt_0.7.1             
+  [7] BiocParallel_1.24.1       Rtsne_0.15               
+  [9] munsell_0.5.0             codetools_0.2-18         
+ [11] ica_1.0-2                 statmod_1.4.35           
+ [13] future_1.20.1             miniUI_0.1.1.1           
+ [15] withr_2.3.0               colorspace_2.0-0         
+ [17] fastICA_1.2-2             knitr_1.30               
+ [19] rstudioapi_0.13           ROCR_1.0-11              
+ [21] tensor_1.5                listenv_0.8.0            
+ [23] labeling_0.4.2            git2r_0.27.1             
+ [25] slam_0.1-47               GenomeInfoDbData_1.2.4   
+ [27] polyclip_1.10-0           farver_2.0.3             
+ [29] bit64_4.0.5               pheatmap_1.0.12          
+ [31] rprojroot_2.0.2           parallelly_1.21.0        
+ [33] vctrs_0.3.5               generics_0.1.0           
+ [35] xfun_0.19                 R6_2.5.0                 
+ [37] doParallel_1.0.16         graphlayouts_0.7.1       
+ [39] rsvd_1.0.3                locfit_1.5-9.4           
+ [41] bitops_1.0-6              spatstat.utils_1.17-0    
+ [43] assertthat_0.2.1          promises_1.1.1           
+ [45] scales_1.1.1              gtable_0.3.0             
+ [47] beachmat_2.6.2            globals_0.14.0           
+ [49] goftest_1.2-2             tidygraph_1.2.0          
+ [51] rlang_0.4.9               lazyeval_0.2.2           
+ [53] yaml_2.2.1                reshape2_1.4.4           
+ [55] abind_1.4-5               httpuv_1.5.4             
+ [57] tools_4.0.2               ellipsis_0.3.1           
+ [59] ggridges_0.5.2            Rcpp_1.0.5               
+ [61] plyr_1.8.6                sparseMatrixStats_1.2.0  
+ [63] zlibbioc_1.36.0           purrr_0.3.4              
+ [65] RCurl_1.98-1.2            densityClust_0.3         
+ [67] rpart_4.1-15              deldir_0.2-3             
+ [69] pbapply_1.4-3             viridis_0.5.1            
+ [71] zoo_1.8-8                 ggrepel_0.8.2            
+ [73] fs_1.5.0                  magrittr_2.0.1           
+ [75] data.table_1.13.2         lmtest_0.9-38            
+ [77] RANN_2.6.1                fitdistrplus_1.1-1       
+ [79] patchwork_1.1.0           mime_0.9                 
+ [81] evaluate_0.14             xtable_1.8-4             
+ [83] sparsesvd_0.2             gridExtra_2.3            
+ [85] HSMMSingleCell_1.10.0     compiler_4.0.2           
+ [87] tibble_3.0.4              KernSmooth_2.23-18       
+ [89] crayon_1.3.4              htmltools_0.5.0          
+ [91] mgcv_1.8-33               later_1.1.0.1            
+ [93] tidyr_1.1.2               DBI_1.1.0                
+ [95] tweenr_1.0.1              MASS_7.3-53              
+ [97] igraph_1.2.6              pkgconfig_2.0.3          
+ [99] plotly_4.9.2.1            scuttle_1.0.3            
+[101] foreach_1.5.1             dqrng_0.2.1              
+[103] XVector_0.30.0            stringr_1.4.0            
+[105] digest_0.6.27             sctransform_0.3.1        
+[107] RcppAnnoy_0.0.17          spatstat.data_1.5-2      
+[109] rmarkdown_2.5             leiden_0.3.5             
+[111] uwot_0.1.9                DelayedMatrixStats_1.12.1
+[113] shiny_1.5.0               lifecycle_0.2.0          
+[115] nlme_3.1-150              jsonlite_1.7.1           
+[117] BiocNeighbors_1.8.1       viridisLite_0.3.0        
+[119] pillar_1.4.7              lattice_0.20-41          
+[121] fastmap_1.0.1             httr_1.4.2               
+[123] survival_3.2-7            glue_1.4.2               
+[125] qlcMatrix_0.9.7           FNN_1.1.3                
+[127] spatstat_1.64-1           png_0.1-7                
+[129] iterators_1.0.13          bluster_1.0.0            
+[131] bit_4.0.4                 ggforce_0.3.2            
+[133] stringi_1.5.3             blob_1.2.1               
+[135] BiocSingular_1.6.0        memoise_1.1.0            
+[137] future.apply_1.6.0       </code></pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
