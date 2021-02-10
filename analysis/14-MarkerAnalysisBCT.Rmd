@@ -1,0 +1,258 @@
+---
+title: "Marker analysis of broad cell types"
+author: "Belinda Phipson"
+date: "10/02/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Load libraries and functions
+
+```{r}
+library(edgeR)
+library(RColorBrewer)
+library(org.Hs.eg.db)
+library(limma)
+library(Seurat)
+library(monocle)
+library(cowplot)
+library(DelayedArray)
+library(scran)
+library(NMF)
+library(workflowr)
+library(ggplot2)
+library(clustree)
+library(dplyr)
+library(gridBase)
+library(grid)
+library(speckle)
+```
+
+
+# Read in the data objects
+
+```{r readTargets}
+targets <- read.delim("./data/targets.txt",header=TRUE, stringsAsFactors = FALSE)
+targets$FileName2 <- paste(targets$FileName,"/",sep="")
+targets$Group_ID2 <- gsub("LV_","",targets$Group_ID)
+group <- c("Fetal_1","Fetal_2","Fetal_3",
+           "Young_1","Young_2","Young_3",
+           "Adult_1","Adult_2","Adult_3", 
+           "Diseased_1","Diseased_2",
+           "Diseased_3","Diseased_4")
+m <- match(group, targets$Group_ID2)
+targets <- targets[m,]
+```
+
+```{r eval=FALSE}
+# Load unfiltered counts matrix for every sample (object all)
+load("./output/all-counts.Rdata")
+```
+
+```{r eval=FALSE}
+heart <- readRDS(file="./output/heartFYA.Rds")
+```
+
+```{r eval=FALSE}
+heart$Broad_celltype <- factor(heart$Broad_celltype,
+              levels=c("Cardiomyocytes","Fibroblast","Endothelial cells",
+                       "Immune cells","Epicardial cells","Neurons",
+                       "Smooth muscle cells","Erythroid"))
+heart$biorep <- factor(heart$biorep,levels=c("f1","f2","f3","y1","y2","y3","a1","a2","a3"))
+table(heart$biorep,heart$Broad_celltype)
+
+all.bct <- factor(heart$Broad_celltype,
+              levels=c("Cardiomyocytes","Fibroblast","Endothelial cells",
+                       "Immune cells","Epicardial cells","Neurons",
+                       "Smooth muscle cells","Erythroid"))
+sample <- heart$biorep
+```
+
+```{r eval=FALSE}
+m <- match(colnames(heart),colnames(all))
+all.counts <- all[,m]
+```
+
+
+# Get gene annotation and perform filtering
+
+```{r eval=FALSE}
+columns(org.Hs.eg.db)
+ann <- AnnotationDbi:::select(org.Hs.eg.db,keys=rownames(all.counts),columns=c("SYMBOL","ENTREZID","ENSEMBL","GENENAME","CHR"),keytype = "SYMBOL")
+m <- match(rownames(all.counts),ann$SYMBOL)
+ann <- ann[m,]
+```
+
+```{r eval=FALSE}
+mito <- grep("mitochondrial",ann$GENENAME)
+ribo <- grep("ribosomal",ann$GENENAME)
+missingEZID <- which(is.na(ann$ENTREZID))
+```
+
+```{r eval=FALSE}
+chuck <- unique(c(mito,ribo,missingEZID))
+all.counts.keep <- all.counts[-chuck,]
+ann.keep <- ann[-chuck,]
+```
+
+
+```{r eval=FALSE}
+numzero.genes <- rowSums(all.counts.keep==0)
+keep.genes <- numzero.genes < (ncol(all.counts.keep)-20)
+all.keep <- all.counts.keep[keep.genes,]
+ann.keep.all <- ann.keep[keep.genes,]
+```
+
+
+# Limma analysis
+
+```{rm eval=FALSE}
+logcounts.all <- normCounts(all.keep,log=TRUE,prior.count=0.5)
+
+design <- model.matrix(~0+all.bct+sample)
+colnames(design)[1:(length(levels(all.bct)))] <- levels(all.bct)
+
+mycont <- matrix(0,ncol=length(levels(all.bct)),nrow=length(levels(all.bct)))
+colnames(mycont)<-levels(all.bct)
+diag(mycont)<-1
+mycont[upper.tri(mycont)]<- -1/(length(levels(all.bct))-1)
+mycont[lower.tri(mycont)]<- -1/(length(levels(all.bct))-1)
+
+# Fill out remaining rows with 0s
+zero.rows <- matrix(0,ncol=length(levels(all.bct)),nrow=(ncol(design)-length(levels(all.bct))))
+test <- rbind(mycont,zero.rows)
+
+fit <- lmFit(logcounts.all,design)
+fit.cont <- contrasts.fit(fit,contrasts=test)
+fit.cont <- eBayes(fit.cont,trend=TRUE,robust=TRUE)
+
+fit.cont$genes <- ann.keep.all
+
+treat.all <- treat(fit.cont,lfc=0.5)
+```
+
+```{r echo=FALSE}
+load("./output/bct-treat-all.RData")
+```
+
+```{r}
+dt <- decideTests(treat.all)
+summary(dt)
+```
+
+
+```{r,fig.width=10,fig.height=10}
+par(mfrow=c(3,3))
+par(mar=c(5,5,2,2))
+for(i in 1:ncol(treat.all)){
+  plotMD(treat.all,coef=i,status = dt[,i],hl.cex=0.5)
+  abline(h=0,col=colours()[c(226)])
+  lines(lowess(treat.all$Amean,treat.all$coefficients[,i]),lwd=1.5,col=4)
+}
+```
+
+
+# DotPlot to visualise marker genes
+
+```{r}
+heart <- readRDS("./output/heartFYA.Rds")
+```
+
+```{r}
+DefaultAssay(heart) <- "RNA"
+
+sig.genes <- gene.label <- vector("list", ncol(treat.all))
+for(i in 1:length(sig.genes)){
+  top <- topTreat(treat.all,coef=i,n=Inf,sort.by="t")
+  sig.genes[[i]] <- rownames(top)[top$logFC>0][1:10]
+  gene.label[[i]] <- paste(rownames(top)[top$logFC>0][1:10],colnames(treat.all)[i],sep="-")
+} 
+
+csig <- unlist(sig.genes)
+genes <- unlist(gene.label)
+
+missing <- is.na(match(csig,rownames(heart)))
+
+csig2 <- csig[!missing]
+
+gene.cols <- rep(c(ggplotColors(7),"grey"),each=10)
+gene.cols <- gene.cols[!missing]
+
+d <- duplicated(csig2)
+csig2 <- csig2[!d]
+gene.cols <- gene.cols[!d]
+```
+
+```{r, fig.width=15, fig.height=15}
+DotPlot(heart,features=unique(csig2),group.by="Broad_celltype",cols = c("lightgrey", "red"))+RotatedAxis() + FontSize(y.text = 8, x.text=14) + labs(y=element_blank(),x=element_blank()) + coord_flip() + theme(axis.text.y = element_text(color=(gene.cols)))
+```
+
+## Perform gene set testing on reactome sets
+
+```{r}
+load("./output/human_c2_v5p2.rdata")
+c2.id <- ids2indices(Hs.c2,treat.all$genes$ENTREZID)
+reactome.id <-c2.id[grep("REACTOME",names(c2.id))]
+```
+
+### Reactome figures - cardio
+
+```{r}
+cardio.camera <- cameraPR(treat.all$t[,1],reactome.id)
+cardio.camera.up <- cardio.camera[cardio.camera[,2]=="Up",]
+
+fibro.camera <- cameraPR(treat.all$t[,2],reactome.id)
+fibro.camera.up <- fibro.camera[fibro.camera[,2]=="Up",]
+
+endo.camera <- cameraPR(treat.all$t[,3],reactome.id)
+endo.camera.up <- endo.camera[endo.camera[,2]=="Up",]
+
+immune.camera <- cameraPR(treat.all$t[,4],reactome.id)
+immune.camera.up <- immune.camera[immune.camera[,2]=="Up",]
+
+epic.camera <- cameraPR(treat.all$t[,5],reactome.id)
+epic.camera.up <- epic.camera[epic.camera[,2]=="Up",]
+
+neuron.camera <- cameraPR(treat.all$t[,6],reactome.id)
+neuron.camera.up <- neuron.camera[neuron.camera[,2]=="Up",]
+
+smc.camera <- cameraPR(treat.all$t[,7],reactome.id)
+smc.camera.up <- smc.camera[smc.camera[,2]=="Up",]
+
+eryth.camera <- cameraPR(treat.all$t[,8],reactome.id)
+eryth.camera.up <- eryth.camera[eryth.camera[,2]=="Up",]
+
+nsets <- 5
+all.cam <- rbind(cardio.camera.up[1:nsets,], fibro.camera.up[1:nsets,],
+                       endo.camera.up[1:nsets,],immune.camera.up[1:nsets,],
+                       epic.camera.up[1:nsets,],neuron.camera.up[1:nsets,],
+                       smc.camera.up[1:nsets,],eryth.camera.up[1:nsets,])
+
+scores <- -log10(all.cam$PValue)
+names(scores) <- rownames(all.cam)
+names(scores) <- gsub("REACTOME_","",names(scores))
+```
+
+```{r, fig.width=12, fig.height=11}
+par(mfrow=c(1,1))
+par(mar=c(5,41,3,2))
+barplot(scores[length(scores):1],horiz = T,las=2,col=rev(rep(c(ggplotColors(7),"grey"),each=nsets)),cex.names=0.9,
+        cex.axis = 1.5,xlab="-log10(PValue)",cex.lab=1.5)
+abline(v= -log10(0.05),lty=2)
+```
+
+
+
+
+
+
+
