@@ -1,0 +1,218 @@
+Gene	Celltype
+TNNT2	Cardiomyocyte
+ACTN2	Cardiomyocyte
+TNNI3	Cardiomyocyte
+Actc1	Cardiomyocyte
+Tpm	Cardiomyocyte
+Ryr2	Cardiomyocyte
+Myh6	Cardiomyocyte
+Atp2a2	Cardiomyocyte
+Nppa	Cardiomyocyte
+NTnnc1	Cardiomyocyte
+Acta1	Cardiomyocyte
+Atp2a2	Cardiomyocyte_sub1
+Myh6	Cardiomyocyte_sub1
+Actc1	Cardiomyocyte_sub1
+Casq2	Cardiomyocyte_sub1
+Ckmt2	Cardiomyocyte_sub1
+Atp2a2	Cardiomyocyte_sub2
+Myh6	Cardiomyocyte_sub2
+Tnnt2	Cardiomyocyte_sub2
+Casq2	Cardiomyocyte_sub2
+Myl3	Cardiomyocyte_sub2
+Tnni3	Cardiomyocyte_sub2
+Ttn	Cardiomyocyte_sub2
+Mybpc3	Cardiomyocyte_sub2
+Ryr2	Cardiomyocyte_sub2
+Atp2a2	Cardiomyocyte_sub3
+Myh6	Cardiomyocyte_sub3
+Actc1	Cardiomyocyte_sub3
+Pln	Cardiomyocyte_sub3
+Des	Cardiomyocyte_sub3
+Tpm1	Cardiomyocyte_sub3
+Npp1	Cardiomyocyte_sub3
+Tnnc1	Cardiomyocyte_sub3
+Myom1	Cardiomyocyte_sub3
+Des	Cardiomyocyte_sub4
+Myoz2	Cardiomyocyte_sub4
+Actc1	Cardiomyocyte_sub4
+Pln	Cardiomyocyte_sub4
+Myl2	Cardiomyocyte_sub4
+Tpm1	Cardiomyocyte_sub4
+UPK3B	Epicardial cells
+WT1	Epicardial cells
+PDGFRA	Cono-ventricular progenitor
+BMP4	Cono-ventricular progenitor
+RSPO3	Cono-ventricular progenitor
+LGR5	Cono-ventricular progenitor
+ISL1	Cono-ventricular progenitor
+IGFBP2	Free-wall ventricular progenitor
+HES4	Free-wall ventricular progenitor
+CTHRC1	Free-wall ventricular progenitor
+MT1H	Free-wall ventricular progenitor
+FKBP1B	Free-wall ventricular progenitor
+TBX3	Cono-ventricular muscle cells
+BMP2	Cono-ventricular muscle cells
+ITGA7	Cono-ventricular muscle cells
+FGF16	Cono-ventricular muscle cells
+PNOC	Cono-ventricular muscle cells
+PLN	Free-wall ventricular muscle cells
+NPPB	Free-wall ventricular muscle cells
+MYL2	Free-wall ventricular muscle cells
+FGF12	Free-wall ventricular muscle cells
+HOPX	Free-wall ventricular muscle cells
+TMSB10	Diseased cell
+IFI27	Diseased cell
+IFITM1	Diseased cell
+RPS14	Diseased cell
+MT2A	Diseased cell
+CDKN1A	Diseased cell
+IGFBP3	Diseased cell
+FOS	Diseased cell
+CD36	Diseased cell
+Cd79s	B cells
+Ly6d	B cells
+Cd79b	B cells
+H2-Dmb2	B cells
+Ms4a1	B cells
+H2-Ob	B cells
+Fcmr	B cells
+Ccr7	B cells
+Bank1	B cells
+Cd55	B cells
+Lgals3	DC-like cells
+Napsa	DC-like cells
+Plbd1	DC-like cells
+Ccr2	DC-like cells
+Rnase6	DC-like cells
+Plac8	DC-like cells
+Ifitm6	DC-like cells
+Naaa	DC-like cells
+Ear2	DC-like cells
+H2afy	DC-like cells
+Pecam1	Endothelial cells
+Kdr	Endothelial cells
+Cdh5	Endothelial cells
+Egfl7	Endothelial cells
+Emcn	Endothelial cells
+Ly6c1	Endothelial cells
+Gpihbp1	Endothelial cells
+Mgll	Endothelial cells
+Slc9a3r2	Endothelial cells
+Rgcc	Endothelial cells
+Fabp4	Endothelial cells
+Tie1	Endothelial cells
+Flt1	Endothelial cells
+Epas	Endothelial cells
+Ednrb	Endothelial cells
+Col1a2	Fibroblasts1
+Col3a1	Fibroblasts1
+Pdgfra	Fibroblasts1
+Lamc1	Fibroblasts1
+Pcsk6	Fibroblasts1
+Entpd2	Fibroblasts1
+Dpep1	Fibroblasts1
+Adamts5	Fibroblasts1
+Medag	Fibroblasts1
+Ms4a4d	Fibroblasts1
+Lamb1	Fibroblasts1
+Tcf21	Fibroblasts1
+Vim	Fibroblasts1
+Fstl1	Fibroblasts1
+COL1A1	Fibroblasts1
+DCN	Fibroblasts1
+POSTN	Fibroblasts1
+SOX9	Fibroblasts1
+Dkk3	Fibroblasts2
+Tbx20	Fibroblasts2
+Wif1	Fibroblasts2
+Frzb	Fibroblasts2
+Meox1	Fibroblasts2
+Prg4	Fibroblasts2
+Abi3bp	Fibroblasts2
+Pdgfrl	Fibroblasts2
+Mdk	Fibroblasts2
+Gstm5	Fibroblasts2
+Gsn	Fibroblasts2
+Fbln2	Fibroblasts2
+Sparc	Fibroblasts2
+Mmp2	Fibroblasts2
+S100a8	Granulocytes
+S100a9	Granulocytes
+Slpi	Granulocytes
+Csf3r	Granulocytes
+Hcar2	Granulocytes
+Lmnb1	Granulocytes
+Retnlg	Granulocytes
+CClec4d	Granulocytes
+Hp	Granulocytes
+Hdc	Granulocytes
+Csfr1	Macrophages
+Dab2	Macrophages
+Adgre1	Macrophages
+Mgl2	Macrophages
+Mrc2	Macrophages
+Hpgd	Macrophages
+P2ry6	Macrophages
+C3ar1	Macrophages
+F13a1	Macrophages
+Maf	Macrophages
+Ms4a7	Macrophages
+Cd74	Macrophages
+Cd163	Macrophages
+Lyz1	Macrophages
+Emr1	Macrophages
+Lgals3	Macrophages
+Cd68	Macrophages
+Itgam	Macrophages
+Ccl5	NK cells
+Nkg7	NK cells
+Klrk1	NK cells
+Klre1	NK cells
+Klrd1	NK cells
+Ncr1	NK cells
+Ctsw	NK cells
+Klrb1c	NK cells
+Gzma	NK cells
+Gzmb	NK cells
+Kcnj8	Pericytes
+Vtn	Pericytes
+Colec11	Pericytes
+Steap4	Pericytes
+Abcc9	Pericytes
+Myo1b	Pericytes
+Cog7	Pericytes
+P2ry14	Pericytes
+Heyl	Pericytes
+Gnb4	Pericytes
+Plp1	Schwann cells
+Kcna1	Schwann cells
+Cnp	Schwann cells
+S100b	Schwann cells
+Gfra3	Schwann cells
+Gpr37l1	Schwann cells
+Nrn1	Schwann cells
+Aspa	Schwann cells
+GCd59a	Schwann cells
+Stmn1	Schwann cells
+Tagln	Smooth muscle cells
+Mustn1	Smooth muscle cells
+Myh11	Smooth muscle cells
+Mylk	Smooth muscle cells
+Pcp4l1	Smooth muscle cells
+Sncg	Smooth muscle cells
+Lmod1	Smooth muscle cells
+Des	Smooth muscle cells
+Pln	Smooth muscle cells
+Nrip2	Smooth muscle cells
+Cd3d	T cells
+Cd3g	T cells
+Lat	T cells
+Cd3e	T cells
+Skap1	T cells
+Il7r	T cells
+Lef1	T cells
+Cd247	T cells
+Tcf7	T cells
+Itk	T cells
+TPSAB1	Mast cells
